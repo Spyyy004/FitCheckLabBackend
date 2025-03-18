@@ -11,6 +11,7 @@ import recentAnalysisRoutes from "./routes/recent-analysis.js";
 import profileRoutes from "./routes/profiles.js";
 import onboardingRoutes from './routes/onboarding.js';
 import healthRoutes from './routes/health.js';
+import wardrobeRoutes from './routes/wardrobe.js';
 import editProfileRoutes from './routes/edit-profile.js';
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.use("/api/recent-analysis", recentAnalysisRoutes);
 app.use("/api/profile",profileRoutes)
 app.use("/api/onboarding",onboardingRoutes);
 app.use("/health",healthRoutes);
+app.use("/api/wardrobe",wardrobeRoutes);
 app.use("/api/update-profile",editProfileRoutes)
 // Start Server
 const PORT = process.env.PORT || 3001;
