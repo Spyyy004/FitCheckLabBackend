@@ -25,8 +25,8 @@ router.put("/", async (req, res) => {
     console.log("🔑 Authenticated User ID:", userId);
 
     // Extract updatable fields from request body
-    const { full_name, height, weight, gender, style } = req.body;
-
+    const { full_name, height, weight, style } = req.body;
+    const gender = req.body.gender?.toLowerCase();
     // Ensure email cannot be updated
     if (req.body.email) {
       return res.status(400).json({ error: "Email cannot be updated." });
@@ -35,8 +35,8 @@ router.put("/", async (req, res) => {
     // Update user profile in Supabase
     const { data, error } = await supabase
       .from("profiles") // Ensure your user profiles are stored in this table
-      .update({ full_name, height, weight, gender, style })
-      .match({ user_id: userId })
+      .update({ full_name, height, weight, gender,style })
+      .match({ id: userId })
       .select("*");
 
     if (error) {
