@@ -71,6 +71,7 @@ router.post("/", upload.single("image"), async (req, res) => {
   
       console.log(`🔑 Authenticated User ID: ${user_id || "None"}`);
       console.log(`🔑 Session Token: ${session_token || "None (User might be logged in)"}`);
+      const supabaseUrl = process.env.SUPABASE_URL;
   
       // **2️⃣ Prepare Image for Upload**
       const file = req.file;
@@ -96,7 +97,7 @@ router.post("/", upload.single("image"), async (req, res) => {
         return res.status(500).json({ error: "Error uploading image to Supabase." });
       }
   
-      const imageUrl = `https://itdkorjbpoddeiarmbji.supabase.co/storage/v1/object/public/outfits/${uploadData.path}`;
+      const imageUrl = `${supabaseUrl}/storage/v1/object/public/outfits /${uploadData.path}`;
       console.log(`✅ Image uploaded successfully: ${imageUrl}`);
   
       // **4️⃣ Generate AI Prompt Based on Occasion**
