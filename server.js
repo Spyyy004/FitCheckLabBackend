@@ -10,6 +10,7 @@ import analyzeRoutes from "./routes/analyze-outfit.js"; // Already built
 import recentAnalysisRoutes from "./routes/recent-analysis.js";
 import profileRoutes from "./routes/profiles.js";
 import onboardingRoutes from './routes/onboarding.js';
+import healthRoutes from './routes/health.js';
 
 dotenv.config();
 const app = express();
@@ -35,6 +36,7 @@ app.use("/api/analyze-outfit", analyzeRoutes); // Existing Analysis Route
 app.use("/api/recent-analysis", recentAnalysisRoutes);
 app.use("/api/profile",profileRoutes)
 app.use("/api/onboarding",onboardingRoutes);
+app.use("/health",healthRoutes);
 // Start Server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
