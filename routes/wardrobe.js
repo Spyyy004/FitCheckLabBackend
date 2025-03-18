@@ -11,7 +11,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.post("/add", authenticateUser, upload.single("image"), async (req, res) => {
   try {
     const { category, subCategory, material, brand, fit } = req.body || {};
-    
     // Validate required fields
     if (!req.file) return res.status(400).json({ error: "No image uploaded." });
     if (!category) return res.status(400).json({ error: "No category provided." });
@@ -94,7 +93,7 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
       .insert([
         {
           // User provided data
-          user_id: req?.user?.user?.id, // If using authentication
+          user_id: req?.user?.id, // If using authentication
           category,
           sub_category: subCategory,
           material: material || analysisResult.material,
@@ -138,7 +137,7 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
 // Get all wardrobe items for a user
 router.get("/", authenticateUser, async (req, res) => {
   try {
-    const userId = req?.user?.user?.id;
+    const userId = req?.user?.id;
     const { data, error } = await supabase
       .from("clothing_items")
       .select("*")
