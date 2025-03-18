@@ -4,7 +4,7 @@ import { supabase } from "../config/supabaseClient.js"; // Ensure you have a val
 const router = express.Router();
 
 // 🔹 Update Profile Endpoint
-router.put("/update-profile", async (req, res) => {
+router.put("/", async (req, res) => {
   try {
     // Extract access token from headers
     const accessToken = req.headers.authorization?.split(" ")[1];

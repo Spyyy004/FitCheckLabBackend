@@ -38,7 +38,7 @@ app.use("/api/recent-analysis", recentAnalysisRoutes);
 app.use("/api/profile",profileRoutes)
 app.use("/api/onboarding",onboardingRoutes);
 app.use("/health",healthRoutes);
-app.use("/",editProfileRoutes)
+app.use("/api/update-profile",editProfileRoutes)
 // Start Server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
