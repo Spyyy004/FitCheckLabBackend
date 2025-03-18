@@ -94,7 +94,7 @@ router.post("/add", upload.single("image"), async (req, res) => {
       .insert([
         {
           // User provided data
-          user_id: req.user?.id, // If using authentication
+          user_id: req?.user?.user?.id, // If using authentication
           category,
           sub_category: subCategory,
           material: material || analysisResult.material,
