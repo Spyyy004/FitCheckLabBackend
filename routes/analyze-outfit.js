@@ -97,7 +97,7 @@ router.post("/", upload.single("image"), async (req, res) => {
         return res.status(500).json({ error: "Error uploading image to Supabase." });
       }
   
-      const imageUrl = `${supabaseUrl}/storage/v1/object/public/outfits /${uploadData.path}`;
+      const imageUrl = `${supabaseUrl}/storage/v1/object/public/outfits/${uploadData.path}`;
       console.log(`✅ Image uploaded successfully: ${imageUrl}`);
   
       // **4️⃣ Generate AI Prompt Based on Occasion**
