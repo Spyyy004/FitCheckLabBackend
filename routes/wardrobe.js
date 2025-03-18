@@ -8,7 +8,7 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Add clothing item to wardrobe with AI analysis
-router.post("/add", upload.single("image"), async (req, res) => {
+router.post("/add", authenticateUser, upload.single("image"), async (req, res) => {
   try {
     const { category, subCategory, material, brand, fit } = req.body || {};
     
@@ -136,14 +136,13 @@ router.post("/add", upload.single("image"), async (req, res) => {
 
 
 // Get all wardrobe items for a user
-router.get("/:user_id", async (req, res) => {
+router.get("/", authenticateUser, async (req, res) => {
   try {
-    const { user_id } = req.params;
-    
+    const userId = req?.user?.user?.id;
     const { data, error } = await supabase
       .from("clothing_items")
       .select("*")
-      .eq("user_id", user_id)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false });
       
     if (error) {
