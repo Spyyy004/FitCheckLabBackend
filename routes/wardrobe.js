@@ -138,24 +138,26 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
 router.get("/", authenticateUser, async (req, res) => {
   try {
     const userId = req?.user?.id;
+    
     const { data, error } = await supabase
       .from("clothing_items")
-      .select("*")
+      .select("id, user_id, name, image_url, sub_category, colors, category") // ✅ Selecting only required fields
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
-      
+
     if (error) {
       console.error("❌ Database Query Error:", error);
       return res.status(500).json({ error: "Error fetching wardrobe items." });
     }
     
     return res.json({ items: data });
-    
+
   } catch (error) {
     console.error("❌ Server Error:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 // Helper function to generate clothing analysis prompt
 function getClothingAnalysisPrompt() {
