@@ -14,7 +14,7 @@ router.get("/", authenticateUser, async (req, res) => {
         // 🔹 Fetch user profile from Supabase, including profile image
         const { data: profile, error } = await supabase
             .from("profiles")
-            .select("id, full_name, date_of_birth, gender, height, weight, profile_image_url, created_at")
+            .select("id, full_name, date_of_birth, gender, height, weight, profile_image_url, created_at, is_premium")
             .eq("id", userId)
             .single(); // Ensures we get a single user profile
 
