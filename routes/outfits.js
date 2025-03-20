@@ -156,11 +156,10 @@ function getOutfitGenerationPrompt({ occasion, season, wardrobeItems }) {
 router.post("/add", authenticateUser, async (req, res) => {
   try {
     const userId = req?.user?.id;
-    
     // Extract outfit data from request body
     const { 
       name, 
-      clothing_item_ids, 
+      itemIds, 
       occasion, 
       season 
     } = req.body;
@@ -170,13 +169,13 @@ router.post("/add", authenticateUser, async (req, res) => {
       return res.status(400).json({ error: "Outfit name is required." });
     }
     
-    if (!clothing_item_ids || !Array.isArray(clothing_item_ids) || clothing_item_ids.length === 0) {
+    if (!itemIds || !Array.isArray(itemIds) || itemIds.length === 0) {
       return res.status(400).json({ error: "At least one clothing item is required." });
     }
     
     console.log("📝 Adding new outfit:", {
       name,
-      itemCount: clothing_item_ids.length,
+      itemCount: itemIds.length,
       occasion: occasion || "Not specified",
       season: season || "Not specified"
     });
@@ -188,7 +187,7 @@ router.post("/add", authenticateUser, async (req, res) => {
         {
           user_id: userId,
           name,
-          clothing_item_ids,
+          clothing_item_ids: itemIds,
           occasion: occasion || null,
           season: season || null,
           created_at: new Date().toISOString(),
