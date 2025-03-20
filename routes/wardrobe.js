@@ -133,24 +133,186 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
   }
 });
 
+export async function fetchWardrobeItems({
+  userId,
+  occasion,
+  season,
+  category,
+  subCategory,
+  color,
+  pattern,
+  material,
+  brand,
+  fieldsToFetch,
+}) {
+  try {
+    console.log("🔍 Fetching wardrobe items with parameters:", {
+      userId,
+      occasion,
+      season,
+      category,
+      subCategory,
+      color,
+      pattern,
+      material,
+      brand,
+    });
 
-// Get all wardrobe items for a user
+    if (!userId) {
+      throw new Error("User ID is required");
+    }
+
+    // Fetch all wardrobe items for the user
+    let query = supabase
+      .from("clothing_items")
+      .select()
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    const { data: allItems, error: dbError } = await query;
+
+    if (dbError) {
+      console.error("❌ Database Fetch Error:", dbError);
+      throw new Error(`Error fetching wardrobe items: ${dbError.message}`);
+    }
+
+    console.log(`✅ Retrieved ${allItems.length} wardrobe items`);
+
+    // Filter items based on provided parameters
+    const filteredItems = [];
+    let excludedItems = [];
+    const hasFilters = !!(occasion || season || category || subCategory || color || pattern || material || brand);
+    const colors = color ? color.split(",").map(c => c.trim()) : null;
+    if (hasFilters) {
+      for (const item of allItems) {
+      let includeItem = true;
+      // Check all conditions
+      if (occasion && (!item.occasions || !item.occasions.includes(occasion))) {
+        includeItem = false;
+      }
+
+      if (includeItem && season && (!item.seasons || !item.seasons.includes(season))) {
+        includeItem = false;
+      }
+
+      if (includeItem && category && item.category !== category) {
+        includeItem = false;
+      }
+
+      if (includeItem && subCategory && item.sub_category !== subCategory) {
+        includeItem = false;
+      }
+
+      if (includeItem && colors) {
+        const colorMatch = item.primary_color && colors.includes(item.primary_color);
+        const colorsArrayMatch = item.colors && item.colors.some(c => colors.includes(c));
+        if (!colorMatch && !colorsArrayMatch) {
+          includeItem = false;
+        }
+      }
+
+      if (includeItem && pattern && item.pattern !== pattern) {
+        includeItem = false;
+      }
+
+      if (includeItem && material && item.material !== material) {
+        includeItem = false;
+      }
+
+      if (includeItem && brand && item.brand !== brand) {
+        includeItem = false;
+      }
+
+      // Add to appropriate array
+      if (includeItem) {
+        filteredItems.push(item);
+      } else {
+        excludedItems.push(item);
+      }
+      }
+    } else {
+      excludedItems = allItems;
+    }
+
+    if (fieldsToFetch) {
+      const fieldsArray = fieldsToFetch.split(',');
+      filteredItems.forEach(item => {
+        const filteredItem = fieldsArray.reduce((acc, field) => {
+          if (item[field.trim()]) {
+            acc[field.trim()] = item[field.trim()];
+          }
+          return acc;
+        }, {});
+        item = filteredItem;
+      });
+      excludedItems = excludedItems.map(item => {
+        const filteredItem = fieldsArray.reduce((acc, field) => {
+          if (item[field.trim()]) {
+            acc[field.trim()] = item[field.trim()];
+          }
+          return acc;
+        }, {});
+        return filteredItem;
+      });
+    }
+
+    console.log(`✅ Filtered ${filteredItems.length} wardrobe items with applied filters`);
+
+    return {
+      filteredItems,
+      items: excludedItems,
+      count: allItems.length,
+      filters: {
+        userId,
+        occasion: occasion || null,
+        season: season || null,
+        category: category || null,
+        subCategory: subCategory || null,
+        color: color || null,
+        pattern: pattern || null,
+        material: material || null,
+        brand: brand || null
+      }
+    };
+
+  } catch (error) {
+    console.error("❌ Wardrobe Items Fetch Error:", error);
+    throw error;
+  }
+}
+
+// Update existing GET endpoint to use the reusable function
 router.get("/", authenticateUser, async (req, res) => {
   try {
     const userId = req?.user?.id;
     
-    const { data, error } = await supabase
-      .from("clothing_items")
-      .select("id, user_id, name, image_url, sub_category, colors, category") // ✅ Selecting only required fields
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("❌ Database Query Error:", error);
-      return res.status(500).json({ error: "Error fetching wardrobe items." });
-    }
+    // Extract all possible filter parameters from query
+    const { 
+      occasion, 
+      season, 
+      category,
+      subCategory, 
+      color, 
+      pattern,
+      material,
+      brand,
+    } = req.query;
     
-    return res.json({ items: data });
+    // Use the reusable function with all parameters
+    const result = await fetchWardrobeItems({
+      userId,
+      occasion, 
+      season, 
+      category,
+      subCategory, 
+      color, 
+      pattern,
+      material,
+      brand,
+      fieldsToFetch: "id, user_id, name, image_url, sub_category, colors, category"
+    });
+    
+    return res.json(result);
 
   } catch (error) {
     console.error("❌ Server Error:", error);
