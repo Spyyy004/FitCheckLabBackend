@@ -9,7 +9,6 @@ router.get("/", authenticateUser, async (req, res) => {
     try {
         const userId = req.user.id; // Extracted from authentication middleware
 
-        console.log(`📌 Fetching profile for user: ${userId}`);
 
         // 🔹 Fetch user profile from Supabase, including profile image
         const { data: profile, error } = await supabase
@@ -27,7 +26,6 @@ router.get("/", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Profile not found" });
         }
 
-        console.log("✅ Profile fetched successfully:", profile);
         return res.json(profile);
     } catch (error) {
         console.error("❌ Server error fetching profile:", error);

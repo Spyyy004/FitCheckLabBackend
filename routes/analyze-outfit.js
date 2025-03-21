@@ -14,7 +14,6 @@ const router = express.Router();
 
 router.post("/", upload.single("image"), async (req, res) => {
     try {
-      console.log("📸 Received a request to analyze an outfit");
   
       // **1️⃣ Validate Request**
       if (!req.file) {
@@ -48,7 +47,6 @@ router.post("/", upload.single("image"), async (req, res) => {
               console.error("❌ Refresh Token Error:", refreshError);
             } else {
               user = refreshedSession.user;
-              console.log("✅ Session refreshed!");
               res.cookie("access_token", refreshedSession.access_token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
@@ -69,8 +67,6 @@ router.post("/", upload.single("image"), async (req, res) => {
       const { occasion, session_token } = req.body;
       const user_id = user?.id || null; // ✅ Use authenticated user_id if available
   
-      console.log(`🔑 Authenticated User ID: ${user_id || "None"}`);
-      console.log(`🔑 Session Token: ${session_token || "None (User might be logged in)"}`);
       const supabaseUrl = process.env.SUPABASE_URL;
       if (user_id) {
         const { data: userProfile, error: profileError } = await supabase
@@ -83,19 +79,13 @@ router.post("/", upload.single("image"), async (req, res) => {
           console.error("⚠️ Error fetching user profile:", profileError);
         } else {
           isPremium = userProfile?.is_premium || false;
-          console.log(`💎 User Premium Status: ${isPremium ? "Premium" : "Free"}`);
         }
       }
       // **2️⃣ Prepare Image for Upload**
       const file = req.file;
-      console.log("🖼️ File Details:", {
-        originalName: file.originalname,
-        mimeType: file.mimetype,
-        size: file.size,
-      });
+   
   
       // **3️⃣ Upload Image to Supabase Storage**
-      console.log("🚀 Uploading image to Supabase...");
       const filePath = `outfit_${Date.now()}.jpg`;
   
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -111,14 +101,11 @@ router.post("/", upload.single("image"), async (req, res) => {
       }
   
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/outfits/${uploadData.path}`;
-      console.log(`✅ Image uploaded successfully: ${imageUrl}`);
   
       // **4️⃣ Generate AI Prompt Based on Occasion**
       const prompt = getPromptForOccasion(occasion || "casual",isPremium);
-      console.log("📝 Generated AI prompt:", prompt);
   
       // **5️⃣ Call OpenAI API for Outfit Analysis**
-      console.log("🤖 Sending request to OpenAI...");
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   
       const aiResponse = await openai.chat.completions.create({
@@ -141,7 +128,6 @@ router.post("/", upload.single("image"), async (req, res) => {
         return res.status(500).json({ error: "Error processing AI response." });
       }
   
-      console.log("✅ AI Response Received:", aiResponse.choices[0].message.content);
       let rawResponse = aiResponse.choices[0].message.content.trim();
       if (rawResponse.startsWith("```json")) rawResponse = rawResponse.replace("```json", "").trim();
       if (rawResponse.endsWith("```")) rawResponse = rawResponse.replace("```", "").trim();
@@ -155,7 +141,6 @@ router.post("/", upload.single("image"), async (req, res) => {
       }
   
       // **7️⃣ Store Analysis in Supabase**
-      console.log("📝 Storing analysis in Supabase...");
       const newSessionToken = session_token || uuidv4(); // Generate new session token for guests
   
       const { data: savedAnalysis, error: dbError } = await supabase
@@ -177,10 +162,8 @@ router.post("/", upload.single("image"), async (req, res) => {
         return res.status(500).json({ error: "Error saving analysis to database." });
       }
   
-      console.log(`✅ Analysis saved with ID: ${savedAnalysis[0].id}`);
   
       // **8️⃣ Return Final Response**
-      console.log("🚀 Successfully analyzed outfit. Sending response...");
       return res.json({
         imageUrl,
         ...analysisResult,
@@ -203,7 +186,6 @@ router.post("/map-analyses", async (req, res) => {
         return res.status(400).json({ error: "Missing user_id or session_token" });
       }
   
-      console.log(`🔄 Mapping analyses for user: ${user_id}`);
   
       // **Update analyses where session_token matches**
       const { error } = await supabase
@@ -216,7 +198,6 @@ router.post("/map-analyses", async (req, res) => {
         return res.status(500).json({ error: "Failed to map analyses to user." });
       }
   
-      console.log("✅ Analyses successfully mapped to user.");
       return res.json({ message: "Successfully linked analyses to account." });
     } catch (error) {
       console.error("❌ Server Error:", error);

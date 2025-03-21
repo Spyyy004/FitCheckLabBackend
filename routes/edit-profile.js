@@ -22,7 +22,6 @@ router.put("/", async (req, res) => {
     }
 
     const userId = userData.user.id; // Get the authenticated user's ID
-    console.log("🔑 Authenticated User ID:", userId);
 
     // Extract updatable fields from request body
     const { full_name, height, weight, style } = req.body;
@@ -44,7 +43,6 @@ router.put("/", async (req, res) => {
       return res.status(500).json({ error: "Error updating profile." });
     }
 
-    console.log("✅ Profile updated successfully:", data);
 
     return res.json({ message: "Profile updated successfully.", profile: data[0] });
 
