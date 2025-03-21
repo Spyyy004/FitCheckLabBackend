@@ -44,6 +44,7 @@ app.use("/api/wardrobe",wardrobeRoutes);
 app.use("/api/update-profile",editProfileRoutes)
 app.use("/api/wardrobe/item",singleClothingItem)
 app.use("/api/payments",paymentsWebhook)
+app.use('/api/payments',paymentsWebhook)
 // Start Server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

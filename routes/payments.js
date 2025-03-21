@@ -1,7 +1,7 @@
 import express from "express";
 import { Webhook } from "standardwebhooks";
 import { supabase } from "../config/supabaseClient.js"; // Ensure proper Supabase setup
-
+import axios from "axios";
 const router = express.Router();
 
 const webhook = new Webhook(process.env.NEXT_PUBLIC_DODO_WEBHOOK_KEY);
@@ -86,5 +86,43 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+
+
+
+router.get("/ip-address", async (req, res) => {
+  try {
+    // Get IP address from request headers
+    const forwardedFor = req.headers["x-forwarded-for"];
+    const ip = forwardedFor ? forwardedFor.split(",")[0] : req.connection.remoteAddress;
+
+    // Use ipapi.co or ipinfo.io to get geolocation info
+    const { data } = await axios.get(`https://ipapi.co/${ip}/json/`);
+
+    const countryCode = data.country || "IN"; // Fallback to "IN"
+
+    // Determine payment link
+    const isIndia = countryCode === "IN";
+
+    const paymentLink = isIndia
+      ? process.env.DODO_PAYMENT_LINK_INDIA
+      : process.env.DODO_PAYMENT_LINK_GLOBAL;
+
+    return res.json({
+      success: true,
+      location: countryCode,
+      paymentLink,
+    });
+  } catch (error) {
+    console.error("❌ Failed to fetch geolocation or payment link:", error.message);
+    return res.status(500).json({
+      success: false,
+      error: "Unable to determine location or generate payment link.",
+    });
+  }
+});
+
+
+
 
 export default router;
