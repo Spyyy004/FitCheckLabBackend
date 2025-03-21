@@ -14,11 +14,11 @@ router.post("/", authenticateUser, upload.single("profile_image"), async (req, r
       const user_id = req.user.id;
   
       // 🔹 Extract form fields from `req.body`
-      const { full_name, date_of_birth, gender, height, weight } = req.body;
+      const { date_of_birth, gender, height, weight } = req.body;
       let profile_image_url = null;
   
       // 🛑 Validate required fields
-      if (!full_name || !date_of_birth || !gender || !height || !weight) {
+      if ( !date_of_birth || !gender || !height || !weight) {
         return res.status(400).json({ error: "All fields are required." });
       }
   
@@ -44,11 +44,11 @@ router.post("/", authenticateUser, upload.single("profile_image"), async (req, r
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ 
-          full_name, 
           date_of_birth, 
           gender, 
           height: parseFloat(height), 
-          weight: parseFloat(weight), 
+          weight: parseFloat(weight),
+          is_premium: true, 
           ...(profile_image_url && { profile_image_url }) // Add image only if uploaded
         })
         .eq("id", user_id);

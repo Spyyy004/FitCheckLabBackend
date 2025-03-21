@@ -1,6 +1,7 @@
 import express from "express";
 import { supabase } from "../config/supabaseClient.js";
 import cookieParser from "cookie-parser";
+import crypto from "crypto"; // Add crypto import for UUID generation
 
 const router = express.Router();
 router.use(cookieParser()); // Enable cookie parsing
@@ -137,6 +138,130 @@ if (session_token) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+/**
+ * 🔍 Google Sign-In API
+ * - Handles authentication with Google credentials
+ * - Creates new user if not exists or signs in existing user
+ * - Returns access token and onboarding flag
+ */
+
+router.post("/google-sign-in", async (req, res) => {
+  try {
+    const { email, full_name, google_id } = req.body;
+
+    if (!email || !full_name || !google_id) {
+      return res.status(400).json({ error: "Missing required fields." });
+    }
+
+    // 🔍 Step 1: Check if user exists in Supabase Auth
+    const { data: existingUser, error: getUserError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    // ✅ Step 2: User does not exist → Sign up
+    if (!existingUser) {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: google_id,
+        options: {
+          data: {
+            username: full_name,
+          },
+        },
+      });
+
+      if (signUpError) {
+        console.error("❌ Google Sign-Up Error:", signUpError);
+        return res.status(500).json({ error: signUpError.message });
+      }
+
+      const userId = signUpData.user?.id;
+      if (!userId) {
+        return res.status(500).json({ error: "User creation failed. No user data returned." });
+      }
+
+      // 🔐 Sign in after sign-up
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: google_id,
+      });
+
+      if (signInError || !signInData.session) {
+        return res.status(401).json({ error: "Authentication failed." });
+      }
+
+      const { access_token, refresh_token } = signInData.session;
+
+      res.cookie("access_token", access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+        maxAge: 60 * 60 * 24 * 7 * 1000,
+      });
+
+      res.cookie("refresh_token", refresh_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+        maxAge: 60 * 60 * 24 * 30 * 1000,
+      });
+
+      return res.json({
+        message: "Google sign-up successful.",
+        access_token,
+        refresh_token,
+        onboarding: true,
+        user_id: userId,
+      });
+    }
+
+    // 🚨 Step 3: User exists → Try to sign in with Google ID as password
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: google_id,
+    });
+
+    // ✅ Sign-in successful → this is a Google-registered user
+    if (signInData?.session) {
+      const { access_token, refresh_token } = signInData.session;
+
+      res.cookie("access_token", access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+        maxAge: 60 * 60 * 24 * 7 * 1000,
+      });
+
+      res.cookie("refresh_token", refresh_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+        maxAge: 60 * 60 * 24 * 30 * 1000,
+      });
+
+      return res.json({
+        message: "Signed in via Google successfully.",
+        access_token,
+        refresh_token,
+        onboarding: false,
+        user_id: signInData.user.id,
+      });
+    }
+
+    // ❌ If sign-in fails, it's likely a non-Google user
+    return res.status(400).json({
+      error: "User already exists. Try signing in with email & password.",
+    });
+
+  } catch (error) {
+    console.error("❌ Server Error:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 /**
  * 🚪 Sign-Out API
