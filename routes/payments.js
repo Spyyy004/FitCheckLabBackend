@@ -1,15 +1,17 @@
 import express from "express";
 import { Webhook } from "standardwebhooks";
-import { supabase } from "../config/supabaseClient.js"; // Ensure this is correctly configured
+import { supabase } from "../config/supabaseClient.js"; // Ensure proper Supabase setup
 
 const router = express.Router();
-
-// Initialize webhook verification
 const webhook = new Webhook(process.env.NEXT_PUBLIC_DODO_WEBHOOK_KEY);
 
-router.post("/", express.text(), async (req, res) => {
+// Middleware to handle raw body parsing for webhook verification
+router.post("/", express.raw({ type: "application/json" }), async (req, res) => {
   try {
     console.log("🔔 Received webhook from Dodo Payments");
+
+    // Ensure raw body is available as a string for verification
+    const rawBody = req.body.toString();
 
     // Extract webhook headers
     const webhookHeaders = {
@@ -19,9 +21,10 @@ router.post("/", express.text(), async (req, res) => {
     };
 
     // Verify the webhook signature
-    await webhook.verify(req.body, webhookHeaders);
+    await webhook.verify(rawBody, webhookHeaders);
 
-    const payload = JSON.parse(req.body);
+    // Parse JSON from raw string
+    const payload = JSON.parse(rawBody);
     console.log("📦 Webhook Payload:", payload);
 
     // Extract required data
@@ -98,3 +101,4 @@ router.post("/", express.text(), async (req, res) => {
 });
 
 export default router;
+3
