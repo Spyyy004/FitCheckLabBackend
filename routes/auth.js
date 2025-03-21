@@ -13,7 +13,6 @@ router.post("/signup", async (req, res) => {
         return res.status(400).json({ error: "Missing required fields." });
       }
   
-      console.log("📝 Signing up new user:", email);
   
       // 1️⃣ Try to create user in Supabase Auth
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -49,7 +48,6 @@ router.post("/signup", async (req, res) => {
         return res.status(500).json({ error: "User creation failed. No user data returned." });
       }
   
-      console.log(`✅ User created successfully: ${user.id}`);
   
   
   
@@ -73,7 +71,6 @@ router.post("/signin", async (req, res) => {
       return res.status(400).json({ error: "Missing email or password." });
     }
 
-    console.log("🔑 Signing in user:", email);
 
     // 1️⃣ Authenticate user
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -84,7 +81,6 @@ router.post("/signin", async (req, res) => {
     }
 
     const { access_token, refresh_token, user } = data.session;
-    console.log("✅ User authenticated successfully.");
 
     // 2️⃣ Store tokens in secure HttpOnly cookies
     res.cookie("access_token", access_token, {
@@ -107,14 +103,12 @@ router.post("/signin", async (req, res) => {
 if (session_token) {
     const trimmedSessionToken = session_token.trim(); // Trim spaces
   
-    console.log("📌 Trimmed session token from frontend:", trimmedSessionToken);
   
     // Fetch stored session tokens to log and debug
     const { data: storedTokens, error: fetchError } = await supabase
       .from("outfit_analyses")
       .select("session_token");
   
-    console.log("📌 Stored session tokens in DB:", storedTokens);
   
     if (fetchError) {
       console.error("❌ Error fetching session tokens:", fetchError);
@@ -128,9 +122,7 @@ if (session_token) {
   
     if (updateError) {
       console.error("❌ Update Error:", updateError);
-    } else {
-      console.log("✅ Updated rows:", updateResult);
-    }
+    } 
   }
   
   

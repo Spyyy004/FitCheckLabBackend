@@ -11,11 +11,9 @@ const router = express.Router();
  */
 router.get("/:id", authenticateUser, async (req, res) => {
   try {
-    console.log("HEREEA AMAA")
     const { id } = req.params;
     const user_id = req.user.id; // Extracted from authenticated session
 
-    console.log(`🔍 Fetching clothing item: ${id} for user: ${user_id}`);
 
     // 1️⃣ Fetch the clothing item from Supabase
     const { data, error } = await supabase
@@ -30,7 +28,6 @@ router.get("/:id", authenticateUser, async (req, res) => {
       return res.status(404).json({ error: "Clothing item not found." });
     }
 
-    console.log("✅ Clothing Item Retrieved:", data);
     return res.json(data);
   } catch (error) {
     console.error("❌ Server Error:", error);

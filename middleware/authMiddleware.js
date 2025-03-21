@@ -54,10 +54,8 @@ export const authenticateUser = async (req, res, next) => {
         sameSite: "Strict",
       });
 
-      console.log("✅ Session refreshed successfully!");
       user = session.user; // Update user with refreshed session
     }
-    console.log("🔑 User authenticated:", user);
     req.user = user; // Attach user data to request
     next(); // Proceed to next middleware
   } catch (error) {

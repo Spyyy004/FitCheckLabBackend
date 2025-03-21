@@ -17,15 +17,7 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
     if (!subCategory) return res.status(400).json({ error: "No subCategory provided." });
     
     // Log received data
-    console.log("Form data received:", {
-      category,
-      subCategory,
-      material: material || "Not provided",
-      brand: brand || "Not provided",
-      fit: fit || "Not provided",
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype
-    });
+   
     
     // 1. Upload image to Supabase Storage
     const imageBuffer = req.file.buffer;
@@ -41,7 +33,6 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
     }
     
     const imageUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/wardrobe/${uploadData.path}`;
-    console.log("✅ Image uploaded successfully:", imageUrl);
     
     // 2. Generate AI prompt for clothing analysis
     const prompt = getClothingAnalysisPrompt();
@@ -49,7 +40,6 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
     // 3. Call OpenAI API for clothing analysis
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     
-    console.log("🤖 Sending request to OpenAI...");
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -73,7 +63,6 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
       return res.status(500).json({ error: "Error processing AI response." });
     }
     
-    console.log("✅ AI Response Received");
     let rawResponse = aiResponse.choices[0].message.content.trim();
     if (rawResponse.startsWith("```json")) rawResponse = rawResponse.replace("```json", "").trim();
     if (rawResponse.endsWith("```")) rawResponse = rawResponse.replace("```", "").trim();
@@ -81,7 +70,6 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
     let analysisResult;
     try {
       analysisResult = JSON.parse(rawResponse);
-      console.log("Parsed AI analysis:", analysisResult);
     } catch (parseError) {
       console.error("❌ Failed to parse OpenAI response:", parseError);
       return res.status(500).json({ error: "Invalid AI response format." });
@@ -118,8 +106,6 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
       console.error("❌ Database Insert Error:", dbError);
       return res.status(500).json({ error: "Error saving clothing item to database." });
     }
-    
-    console.log(`✅ Clothing item saved with ID: ${clothingItem[0].id}`);
     
     // 6. Return success with the combined data
     return res.status(201).json({

@@ -31,7 +31,7 @@ router.get("/", async (req, res) => {
   
   
     if (fetchError) {
-        console.log(fetchError,"ERRORRR",user)
+
       return res.status(500).json({ error: "Database error"});
     }
   
