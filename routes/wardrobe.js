@@ -10,18 +10,12 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Add clothing item to wardrobe with AI analysis
 router.post("/add", authenticateUser, upload.single("image"), async (req, res) => {
   try {
-    const { category, subCategory, material, brand, fit } = req.body || {};
+    const { fit } = req.body || {};
     // Validate required fields
     if (!req.file) return res.status(400).json({ error: "No image uploaded." });
-    if (!category) return res.status(400).json({ error: "No category provided." });
-    if (!subCategory) return res.status(400).json({ error: "No subCategory provided." });
     
     // Log received data
     console.log("Form data received:", {
-      category,
-      subCategory,
-      material: material || "Not provided",
-      brand: brand || "Not provided",
       fit: fit || "Not provided",
       fileSize: req.file.size,
       mimeType: req.file.mimetype
@@ -59,7 +53,7 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
           content: [
             { 
               type: "text", 
-              text: `Analyze this clothing item. User provided: Category: ${category}, Subcategory: ${subCategory}${material ? `, Material: ${material}` : ''}${brand ? `, Brand: ${brand}` : ''}${fit ? `, Fit: ${fit}` : ''}` 
+              text: `Analyze this clothing item. User provided: ${fit ? `, Fit: ${fit}` : ''}` 
             },
             { type: "image_url", image_url: { url: imageUrl } },
           ],
@@ -94,15 +88,15 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
         {
           // User provided data
           user_id: req?.user?.id, // If using authentication
-          category,
-          sub_category: subCategory,
-          material: material || analysisResult.material,
-          brand: brand || null,
+          category: analysisResult.category,
+          sub_category: analysisResult.sub_category,
+          material: analysisResult.material,
+          brand: null,
           fit_type: fit || null,
           image_url: imageUrl,
           
           // AI analyzed data
-          name: analysisResult.suggested_name || `${analysisResult.primary_color || ''} ${subCategory}`,
+          name: analysisResult.suggested_name || `${analysisResult.primary_color || ''} ${analysisResult.sub_category}`,
           colors: analysisResult.colors,
           primary_color: analysisResult.primary_color,
           pattern: analysisResult.pattern,
@@ -327,6 +321,8 @@ function getClothingAnalysisPrompt() {
   Analyze the provided clothing item image and extract detailed information about it.
 
   Provide a structured JSON response with the following information:
+  - category: The category of the item
+  - sub_category: The subcategory of the item
   - primary_color: The dominant color of the item
   - colors: Array of all colors present in the item
   - pattern: The pattern type (solid, striped, plaid, floral, graphic, etc.)
@@ -347,6 +343,128 @@ function getClothingAnalysisPrompt() {
     "style_tags": ["Nautical", "Preppy", "Classic"],
     "suggested_name": "Navy Striped T-shirt",
   }
+
+  Here is list of categories and subcategories:
+  ${JSON.stringify({
+  Tops: [
+    "T-Shirt",
+    "Shirt",
+    "Blouse",
+    "Sweater",
+    "Hoodie",
+    "Tank Top",
+    "Turtleneck",
+    "Cardigan",
+    "Crop Top",
+  ],
+  Bottoms: [
+    "Jeans",
+    "Chinos",
+    "Dress Pants",
+    "Shorts",
+    "Skirt",
+    "Leggings",
+    "Track Pants",
+    "Cargo Pants",
+    "Sweatpants",
+  ],
+  Dresses: [
+    "Casual Dress",
+    "Formal Dress",
+    "Cocktail Dress",
+    "Sundress",
+    "Maxi Dress",
+    "Mini Dress",
+    "Evening Gown",
+    "Wrap Dress",
+  ],
+  Outerwear: [
+    "Jacket",
+    "Coat",
+    "Blazer",
+    "Denim Jacket",
+    "Bomber Jacket",
+    "Windbreaker",
+    "Leather Jacket",
+    "Parka",
+    "Trench Coat",
+    "Puffer Jacket",
+  ],
+  Footwear: [
+    "Sneakers",
+    "Dress Shoes",
+    "Boots",
+    "Sandals",
+    "Loafers",
+    "Heels",
+    "Flats",
+    "Athletic Shoes",
+    "Slippers",
+    "Oxford Shoes",
+  ],
+  Accessories: [
+    "Belt",
+    "Tie",
+    "Scarf",
+    "Gloves",
+    "Sunglasses",
+    "Jewelry",
+    "Watch",
+    "Cufflinks",
+    "Pocket Square",
+    "Hair Accessories",
+  ],
+  Bags: [
+    "Backpack",
+    "Purse",
+    "Tote Bag",
+    "Messenger Bag",
+    "Clutch",
+    "Duffel Bag",
+    "Crossbody Bag",
+    "Briefcase",
+    "Wallet",
+  ],
+  Headwear: [
+    "Cap",
+    "Beanie",
+    "Sun Hat",
+    "Fedora",
+    "Baseball Cap",
+    "Bucket Hat",
+    "Beret",
+  ],
+  Activewear: [
+    "Athletic Shirt",
+    "Sports Bra",
+    "Workout Shorts",
+    "Yoga Pants",
+    "Athletic Jacket",
+    "Compression Wear",
+    "Swimwear",
+    "Track Suit",
+  ],
+  Sleepwear: [
+    "Pajamas",
+    "Robe",
+    "Nightgown",
+    "Loungewear",
+    "Sleep Shorts",
+    "Sleep Shirt",
+  ],
+  Formal: [
+    "Suit",
+    "Tuxedo",
+    "Dress Shirt",
+    "Vest",
+    "Bow Tie",
+    "Formal Shoes",
+    "Gown",
+  ],
+  Other: ["Costume", "Uniform", "Traditional Wear", "Specialty Items"],
+  })}
+
+  categories is the main category of the item which is one of the keys in the above list and sub_category is the subcategory of the item which is one of the values in the above list corresponding to the main category.
   
   Focus on accuracy and detail in your analysis. If you can't determine something confidently, provide your best guess but keep it reasonable.`;
 }
