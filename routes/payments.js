@@ -5,7 +5,7 @@ import { supabase } from "../config/supabaseClient.js"; // Adjust based on your 
 const router = express.Router();
 
 // Initialize webhook instance with secret key
-const webhook = new Webhook(process.env.DODO_WEBHOOK_SECRET); 
+const webhook = new Webhook(process.env.NEXT_PUBLIC_DODO_WEBHOOK_KEY); 
 
 router.post("/", express.text(), async (req, res) => {
   try {
