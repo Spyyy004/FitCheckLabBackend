@@ -9,7 +9,6 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
     try {
 
     console.log("🔔 Received webhook from Dodo Payments");
-    console.log(process.env.NEXT_PUBLIC_DODO_WEBHOOK_KEY);
     const rawBody = JSON.stringify(req.body);
 
     const webhookHeaders = {
