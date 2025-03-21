@@ -1,16 +1,17 @@
 import express from "express";
 import { Webhook } from "standardwebhooks";
-import { supabase } from "../config/supabaseClient.js"; // Adjust based on your project setup
+import { supabase } from "../config/supabaseClient.js"; // Ensure this is correctly configured
 
 const router = express.Router();
 
-// Initialize webhook instance with secret key
-const webhook = new Webhook(process.env.NEXT_PUBLIC_DODO_WEBHOOK_KEY); 
+// Initialize webhook verification
+const webhook = new Webhook(process.env.DODO_WEBHOOK_SECRET);
 
 router.post("/", express.text(), async (req, res) => {
   try {
     console.log("🔔 Received webhook from Dodo Payments");
 
+    // Extract webhook headers
     const webhookHeaders = {
       "webhook-id": req.headers["webhook-id"] || "",
       "webhook-signature": req.headers["webhook-signature"] || "",
@@ -23,46 +24,70 @@ router.post("/", express.text(), async (req, res) => {
     const payload = JSON.parse(req.body);
     console.log("📦 Webhook Payload:", payload);
 
-    // Extract important data
-    const { event, data } = payload;
-    
-    if (!data || !data.customer || !data.customer.email) {
+    // Extract required data
+    const eventType = payload.type;
+    const customerEmail = payload.data?.customer?.email;
+
+    if (!customerEmail) {
       console.error("❌ Missing customer email in webhook payload.");
       return res.status(400).json({ error: "Invalid payload" });
     }
 
-    const userEmail = data.customer.email;
-    const eventType = event.type;
+    // ✅ Handle subscription activation
+    if (eventType === "subscription.active") {
+      console.log(`🎉 Activating premium for ${customerEmail}`);
 
-    // ✅ Handle different webhook events
-    if (eventType === "subscription.created" || eventType === "subscription.renewed") {
-      console.log(`🎉 Premium subscription activated for ${userEmail}`);
-
-      // 🔹 Mark user as premium in Supabase
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from("profiles")
         .update({ is_premium: true })
-        .eq("email", userEmail);
+        .eq("email", customerEmail);
 
-      if (updateError) {
-        console.error("❌ Failed to update user as premium:", updateError);
+      if (error) {
+        console.error("❌ Failed to update user as premium:", error);
         return res.status(500).json({ error: "Database update failed" });
       }
-    } else if (eventType === "subscription.cancelled") {
-      console.log(`🚨 Subscription cancelled for ${userEmail}`);
+    }
 
-      // 🔹 Downgrade user to non-premium
-      const { error: downgradeError } = await supabase
+    // ✅ Handle subscription renewal
+    else if (eventType === "subscription.renewed") {
+      console.log(`🔄 Renewing premium status for ${customerEmail}`);
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_premium: true })
+        .eq("email", customerEmail);
+
+      if (error) {
+        console.error("❌ Failed to renew user premium status:", error);
+        return res.status(500).json({ error: "Database update failed" });
+      }
+    }
+
+    // ✅ Handle successful payment (log only, does not affect is_premium status)
+    else if (eventType === "payment.succeeded") {
+      console.log(`💰 Payment successful for ${customerEmail}`);
+      console.log("📄 Payment Details:", payload.data);
+      // You can log this payment into a `payments` table if needed.
+    }
+
+    // ✅ Handle subscription cancellation
+    else if (eventType === "subscription.cancelled") {
+      console.log(`🚨 Downgrading ${customerEmail} to free tier`);
+
+      const { error } = await supabase
         .from("profiles")
         .update({ is_premium: false })
-        .eq("email", userEmail);
+        .eq("email", customerEmail);
 
-      if (downgradeError) {
-        console.error("❌ Failed to downgrade user:", downgradeError);
+      if (error) {
+        console.error("❌ Failed to downgrade user:", error);
         return res.status(500).json({ error: "Database downgrade failed" });
       }
-    } else {
-      console.log("ℹ️ Unhandled webhook event:", eventType);
+    }
+
+    // 🚨 If event type is unknown
+    else {
+      console.log(`⚠️ Unhandled webhook event: ${eventType}`);
     }
 
     return res.status(200).json({ success: true });
