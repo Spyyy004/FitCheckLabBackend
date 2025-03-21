@@ -30,7 +30,7 @@ router.post("/", authenticateUser, upload.single("profile_image"), async (req, r
   
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("profilepictures")
-          .upload(filePath, Buffer.from(req.file.buffer), { contentType: req.file.mimetype, upsert: true });
+          .upload(filePath, Buffer.from(req.file.buffer), { contentType: req.file.mimetype});
   
         if (uploadError) {
           console.error("❌ Image Upload Error:", uploadError);
