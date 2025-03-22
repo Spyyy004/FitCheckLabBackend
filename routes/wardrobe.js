@@ -343,14 +343,25 @@ for (const item of items) {
 }
 
 if (userId && items?.length > 0) {
-  const { error } = await supabase
+  const { data: profile, error: fetchError } = await supabase
     .from("profiles")
-    .update({})
+    .select("cloth_to_metadata_count")
     .eq("id", userId)
-    .increment({ cloth_to_metadata_count: items.length });
+    .single();
 
-  if (error) {
-    console.error("❌ Failed to increment cloth_to_metadata_count:", error);
+  if (fetchError) {
+    console.error("❌ Failed to fetch current cloth_to_metadata_count:", fetchError);
+  } else {
+    const newCount = (profile?.cloth_to_metadata_count || 0) + items.length;
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ cloth_to_metadata_count: newCount })
+      .eq("id", userId);
+
+    if (updateError) {
+      console.error("❌ Failed to update cloth_to_metadata_count:", updateError);
+    }
   }
 }
 
