@@ -20,13 +20,33 @@ router.post("/add",authenticateUser, async (req, res) => {
 router.get("/",authenticateUser, async (req, res) => {
   const userId = req?.user?.id;
 
-  const { data, error } = await supabase
+  // First get all occasions for the user
+  const { data: occasions, error: occasionsError } = await supabase
     .from("occasions")
     .select("*")
     .eq("user_id", userId);
 
-  if (error) return res.status(400).json({ error: error.message });
-  res.json({ occasions: data });
+  if (occasionsError) return res.status(400).json({ error: occasionsError.message });
+
+  // For each occasion with an outfit_id, fetch the outfit details
+  const occasionsWithOutfits = await Promise.all(
+    occasions.map(async (occasion) => {
+      if (occasion.outfit_id) {
+        const { data: outfitData, error: outfitError } = await supabase
+          .from("outfits")
+          .select("*")
+          .eq("id", occasion.outfit_id)
+          .single();
+        
+        if (!outfitError && outfitData) {
+          return { ...occasion, outfit: outfitData };
+        }
+      }
+      return occasion;
+    })
+  );
+
+  res.json({ occasions: occasionsWithOutfits });
 });
 
 // Delete an Occasion
