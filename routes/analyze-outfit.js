@@ -3,7 +3,7 @@ import multer from "multer";
 import { OpenAI } from "openai";
 import { supabase } from "../config/supabaseClient.js";
 import { v4 as uuidv4 } from "uuid"; 
-import { authenticateUser } from "../middleware/authMiddleware.js";
+import { authenticateUser, trackEvent } from "../middleware/authMiddleware.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
