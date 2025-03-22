@@ -174,7 +174,7 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
 
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
 
-      const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl });
+      const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId });
 
       for (const item of analysisItems) {
         const { data: clothingItem, error: dbError } = await supabase
@@ -235,7 +235,7 @@ const downloadImageToBuffer = async (url) => {
 };
 
 // 🔹 Analyze clothing items and generate AI images
-export async function analyzeAndGenerateClothingItems({ imageUrl }) {
+export async function analyzeAndGenerateClothingItems({ imageUrl, userId }) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const prompt = `You are an advanced fashion AI trained to analyze outfit images and extract structured metadata for each clothing item. Your task is to identify all clothing and accessory pieces in the given image and return a structured JSON response containing their metadata.
 
@@ -314,26 +314,46 @@ Return your response in the following valid JSON structure only (no commentary):
       }
     ]
   }
-  for (const item of items) {
-    try {
-      const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}`;
+  
+for (const item of items) {
+  try {
+    const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}`;
 
-      const imageGen = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: textPrompt,
-        n: 1
-      });
+    const imageGen = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: textPrompt,
+      size: '256x256',
+      n: 1,
+    });
 
-      const generatedUrl = imageGen?.data?.[0]?.url;
+    const generatedUrl = imageGen?.data?.[0]?.url;
 
-      generatedItems.push({
-        ...item,
-        generated_image_url: generatedUrl,
-      });
-    } catch (genErr) {
-      console.warn("⚠️ Failed to generate image for item:", item, genErr);
-    }
+    // ✅ Push item with generated image
+    generatedItems.push({
+      ...item,
+      generated_image_url: generatedUrl,
+    });
+
+    // ✅ Increment count in the profiles table (if user is logged in)
+   
+
+  } catch (genErr) {
+    console.warn("⚠️ Failed to generate image for item:", item, genErr);
   }
+}
+
+if (userId && items?.length > 0) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      cloth_to_metadata_count: supabase.raw(`cloth_to_metadata_count + ${items.length}`),
+    })
+    .eq("id", userId);
+
+  if (error) {
+    console.error("❌ Failed to increment cloth_to_metadata_count:", error);
+  }
+}
 
   return generatedItems;
 }
