@@ -4,7 +4,7 @@ import authMiddleware from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // Add an Occasion
-router.post("/add", async (req, res) => {
+router.post("/add",authMiddleware, async (req, res) => {
   const userId = req?.user?.id;
   const { occasion, name, date_time, recurring, season, outfit_id } = req.body;
 
