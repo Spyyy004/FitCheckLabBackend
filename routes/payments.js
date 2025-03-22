@@ -2,6 +2,7 @@ import express from "express";
 import { Webhook } from "standardwebhooks";
 import { supabase } from "../config/supabaseClient.js"; // Ensure proper Supabase setup
 import axios from "axios";
+import { trackEvent } from "../mixpanel.js";
 const router = express.Router();
 
 const webhook = new Webhook(process.env.NEXT_PUBLIC_DODO_WEBHOOK_KEY);
@@ -60,6 +61,7 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
     else if (eventType === "payment.succeeded") {
       console.log(`💰 Payment successful for ${customerEmail}`);
       console.log("📄 Payment Details:", payload.data);
+     
     }
 
     else if (eventType === "subscription.cancelled") {
@@ -75,11 +77,14 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
         return res.status(500).json({ error: "Database downgrade failed" });
       }
     }
-
+   
     else {
       console.log(` Unhandled webhook event: ${eventType}`);
     }
-
+    trackEvent("","Payments",{
+        type : eventType,
+        email : customerEmail
+      })
     return res.status(200).json({ success: true });
   } catch (error) {
     console.error("❌ Webhook Processing Error:", error);
