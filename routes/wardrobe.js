@@ -225,10 +225,7 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
 });
 
 
-import OpenAI from "openai";
-import fetch from "node-fetch";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // 🔹 Helper to download image from URL to buffer
 const downloadImageToBuffer = async (url) => {
@@ -239,6 +236,7 @@ const downloadImageToBuffer = async (url) => {
 
 // 🔹 Analyze clothing items and generate AI images
 export async function analyzeAndGenerateClothingItems({ imageUrl }) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const prompt = `You are an advanced fashion AI trained to analyze outfit images and extract structured metadata for each clothing item. Your task is to identify all clothing and accessory pieces in the given image and return a structured JSON response containing their metadata.
 
 Extraction Guidelines:
