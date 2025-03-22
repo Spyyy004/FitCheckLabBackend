@@ -35,7 +35,8 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
       8. **Seasons**: The most suitable seasons to wear the item (e.g., ["Summer", "Winter"]).
       9. **Occasions**: The types of events this item is suitable for (e.g., ["Casual", "Streetwear", "Work", "Formal"]).
       10. **Style Tags**: Keywords that best describe the item's fashion style (e.g., ["Minimalist", "Sporty", "Trendy", "Vintage"]).
-      11. **Image URL** (if available): A cropped version of the detected clothing item.
+      11. **Image URL**: Generate a cropped or focused image (AI-generated if needed) representing only the specific item. You may return base64 if generated OR provide a new hosted image link if inferred. Do NOT repeat the full outfit image.
+
 
       Return the JSON output in this exact format:
       {
@@ -100,7 +101,9 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
         return res.status(500).json({ error: "Invalid AI response format." });
       }
       console.log(analysisResult.items.length,'SLAOAALALAKA')
+      
       for (const item of analysisResult.items) {
+        const images_url =  item.image_url || "https://media.istockphoto.com/id/1363802563/vector/clothes-hanger-vector-icon-hanger-isolated-vector-illustration-on-white-background.jpg?s=612x612&w=0&k=20&c=Qy85rXiOK7t4PRYlSk5JG4rk87FVhPgNn7Kfqo5tS7Y="
         const { data: clothingItem, error: dbError } = await supabase
           .from("clothing_items")
           .insert([
@@ -111,7 +114,7 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
               material: material || item.material,
               brand: brand || null,
               fit_type: fit || item.fit,
-              image_url: analysisResult?.items?.length > 1 ? "https://media.istockphoto.com/id/1363802563/vector/clothes-hanger-vector-icon-hanger-isolated-vector-illustration-on-white-background.jpg?s=612x612&w=0&k=20&c=Qy85rXiOK7t4PRYlSk5JG4rk87FVhPgNn7Kfqo5tS7Y=" : imageUrl,
+              image_url: analysisResult?.items?.length > 1 ? images_url : imageUrl,
               name: item.suggested_name || `${item.primary_color || ''} ${item.subcategory}`,
               colors: item.colors,
               primary_color: item.primary_color,

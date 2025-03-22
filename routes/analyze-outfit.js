@@ -80,6 +80,16 @@ router.post("/", upload.single("image"), async (req, res) => {
           console.error("⚠️ Error fetching user profile:", profileError);
         } else {
           isPremium = userProfile?.is_premium || false;
+          const { error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            ai_outfit_analysis_count: (userProfile.ai_outfit_analysis_count || 0) + 1,
+          })
+          .eq("id", user_id);
+    
+        if (updateError) {
+          console.error("⚠️ Failed to increment analysis count:", updateError);
+        }
         }
       }
       // **2️⃣ Prepare Image for Upload**
