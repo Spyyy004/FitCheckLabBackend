@@ -119,29 +119,21 @@ const upload = multer({ storage: multer.memoryStorage() });
 //   }
 // });
 
-router.post("/add", authenticateUser, upload.single("image"), async (req, res) => {
+router.post("/add", authenticateUser, upload.array("image"), async (req, res) => {
   try {
-    const { fit } = req.body || {};
-    // Validate required fields
-    if (!req.file) return res.status(400).json({ error: "No image uploaded." });
-    
-    // Log received data
-    console.log("Form data received:", {
-      fit: fit || "Not provided",
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype
-    });
-    
-    // 1. Upload image to Supabase Storage
-    const imageBuffer = req.file.buffer;
-    const filePath = `wardrobe_${Date.now()}.jpg`;
+    const { category, subCategory, material, brand, fit } = req.body || {};
     const supabaseUrl = process.env.SUPABASE_URL;
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No images uploaded." });
+    }
+
     const prompt = `
       You are an advanced fashion AI trained to analyze outfit images and extract structured metadata for each clothing item. Your task is to identify all clothing and accessory pieces in the given image and return a structured JSON response containing their metadata.
 
       Extraction Guidelines:
       For each detected item, classify it based on the following attributes:
-      
       1. **Category**: The general type of clothing (e.g., "Tops", "Bottoms", "Footwear", "Accessories").
       2. **Subcategory**: A more specific type (e.g., "Sweatshirt", "Joggers", "Sneakers", "Hat", "Bag").
       3. **Material**: The primary fabric or material used (e.g., "Cotton blend", "Denim", "Synthetic", "Leather").
@@ -173,102 +165,81 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
       }
     `;
 
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-    const tempImageUrl = `${supabaseUrl}/storage/v1/object/public/temp/${filePath}`;
-    const aiResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: prompt },
-        {
-          role: "user",
-          content: [
-            { 
-              type: "text", 
-              text: `Analyze this clothing item. User provided: ${fit ? `, Fit: ${fit}` : ''}` 
-            },
-            { type: "image_url", image_url: { url: tempImageUrl } },
-          ],
-        },
-      ],
-    });
-
-    let rawResponse = aiResponse.choices[0].message.content.trim();
-    if (rawResponse.startsWith("```json")) rawResponse = rawResponse.replace("```json", "").trim();
-    if (rawResponse.endsWith("```")) rawResponse = rawResponse.replace("```", "").trim();
-
-    let analysisResult;
-    try {
-      analysisResult = JSON.parse(rawResponse);
-    } catch (parseError) {
-      console.error("❌ Failed to parse OpenAI response:", parseError);
-      return res.status(500).json({ error: "Invalid AI response format." });
-    }
-    
-    // 5. Store clothing item with AI analysis in database
-    const { data: clothingItem, error: dbError } = await supabase
-      .from("clothing_items")
-      .insert([
-        {
-          // User provided data
-          user_id: req?.user?.id, // If using authentication
-          category: analysisResult.category,
-          sub_category: analysisResult.sub_category,
-          material: analysisResult.material,
-          brand: null,
-          fit_type: fit || null,
-          image_url: imageUrl,
-          
-          // AI analyzed data
-          name: analysisResult.suggested_name || `${analysisResult.primary_color || ''} ${analysisResult.sub_category}`,
-          colors: analysisResult.colors,
-          primary_color: analysisResult.primary_color,
-          pattern: analysisResult.pattern,
-          seasons: analysisResult.seasons,
-          occasions: analysisResult.occasions,
-          style_tags: analysisResult.style_tags,
-          analysis_json: analysisResult,
-        },
-      ])
-      .select();
-      
-    if (dbError) {
-      console.error("❌ Database Insert Error:", dbError);
-      return res.status(500).json({ error: "Error saving clothing item to database." });
-    }
-
     const insertedItems = [];
 
-    for (const item of analysisResult.items) {
-      const { data: clothingItem, error: dbError } = await supabase
-        .from("clothing_items")
-        .insert([
-          {
-            user_id: req?.user?.id,
-            category: category || item.category,
-            sub_category: subCategory || item.subcategory,
-            material: material || item.material,
-            brand: brand || null,
-            fit_type: fit || item.fit,
-            image_url: imageUrl,
-            name: item.suggested_name || `${item.primary_color || ''} ${item.subcategory}`,
-            colors: item.colors,
-            primary_color: item.primary_color,
-            pattern: item.pattern,
-            seasons: item.seasons,
-            occasions: item.occasions,
-            style_tags: item.style_tags,
-            analysis_json: item,
-          },
-        ])
-        .select();
+    for (const file of req.files) {
+      const filePath = `wardrobe_${Date.now()}_${file.originalname}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("wardrobe")
+        .upload(filePath, file.buffer, { contentType: file.mimetype });
 
-      if (dbError) {
-        console.error("❌ Database Insert Error:", dbError);
-        return res.status(500).json({ error: "Error saving clothing item to database." });
+      if (uploadError) {
+        console.error("❌ Supabase Upload Error:", uploadError);
+        return res.status(500).json({ error: "Error uploading image to Supabase." });
       }
 
-      insertedItems.push(clothingItem[0]);
+      const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
+
+      const aiResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: prompt },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Analyze this clothing item.}`
+              },
+              { type: "image_url", image_url: { url: imageUrl } },
+            ],
+          },
+        ],
+      });
+
+      let rawResponse = aiResponse.choices[0].message.content.trim();
+      if (rawResponse.startsWith("```json")) rawResponse = rawResponse.replace("```json", "").trim();
+      if (rawResponse.endsWith("```")) rawResponse = rawResponse.replace("```", "").trim();
+
+      let analysisResult;
+      try {
+        analysisResult = JSON.parse(rawResponse);
+      } catch (parseError) {
+        console.error("❌ Failed to parse OpenAI response:", parseError);
+        return res.status(500).json({ error: "Invalid AI response format." });
+      }
+      console.log(analysisResult.items.length,'SLAOAALALAKA')
+      for (const item of analysisResult.items) {
+        const { data: clothingItem, error: dbError } = await supabase
+          .from("clothing_items")
+          .insert([
+            {
+              user_id: req?.user?.id,
+              category: category || item.category,
+              sub_category: subCategory || item.subcategory,
+              material: material || item.material,
+              brand: brand || null,
+              fit_type: fit || item.fit,
+              image_url: analysisResult?.items?.length > 1 ? "https://media.istockphoto.com/id/1363802563/vector/clothes-hanger-vector-icon-hanger-isolated-vector-illustration-on-white-background.jpg?s=612x612&w=0&k=20&c=Qy85rXiOK7t4PRYlSk5JG4rk87FVhPgNn7Kfqo5tS7Y=" : imageUrl,
+              name: item.suggested_name || `${item.primary_color || ''} ${item.subcategory}`,
+              colors: item.colors,
+              primary_color: item.primary_color,
+              pattern: item.pattern,
+              seasons: item.seasons,
+              occasions: item.occasions,
+              style_tags: item.style_tags,
+              analysis_json: item,
+            },
+          ])
+          .select();
+
+        if (dbError) {
+          console.error("❌ Database Insert Error:", dbError);
+          return res.status(500).json({ error: "Error saving clothing item to database." });
+        }
+
+        insertedItems.push(clothingItem[0]);
+      }
     }
 
     return res.status(201).json({
@@ -280,6 +251,8 @@ router.post("/add", authenticateUser, upload.single("image"), async (req, res) =
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+
 
 export async function fetchWardrobeItems({
   userId,
