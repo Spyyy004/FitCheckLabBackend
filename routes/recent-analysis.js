@@ -4,7 +4,7 @@ import { authenticateUser } from "../middleware/authMiddleware.js"; // Ensures u
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+router.get("/", authenticateUser, async (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
 
   if (!token) {

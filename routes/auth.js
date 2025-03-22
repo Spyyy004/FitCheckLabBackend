@@ -132,6 +132,7 @@ if (session_token) {
     return res.json({
       message: "User signed in successfully.",
       access_token, // Send token for frontend use
+      refresh_token
     });
   } catch (error) {
     console.error("❌ Server Error:", error);
