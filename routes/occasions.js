@@ -117,14 +117,90 @@ router.get("/",authenticateUser, async (req, res) => {
   }
 });
 
+// Get a Specific Occasion by ID
+router.get("/:id", authenticateUser, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req?.user?.id;
+
+    // 1. Get the specific occasion
+    const { data: occasion, error: occasionError } = await supabase
+      .from("occasions")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .single();
+
+    if (occasionError) {
+      if (occasionError.code === 'PGRST116') {
+        return res.status(404).json({ error: "Occasion not found" });
+      }
+      return res.status(400).json({ error: occasionError.message });
+    }
+
+    // If no outfit_id, return just the occasion
+    if (!occasion.outfit_id) {
+      return res.json({ occasion });
+    }
+
+    // 2. Get the associated outfit
+    const { data: outfit, error: outfitError } = await supabase
+      .from("outfits")
+      .select("*")
+      .eq("id", occasion.outfit_id)
+      .single();
+
+    if (outfitError) {
+      console.error("Error fetching outfit:", outfitError);
+      // Return occasion without outfit data if there was an error
+      return res.json({ occasion });
+    }
+
+    // 3. Get all clothing items in a single database call
+    let clothingItems = [];
+    if (outfit.clothing_item_ids && outfit.clothing_item_ids.length > 0) {
+      const { data: items, error: itemsError } = await supabase
+        .from("clothing_items")
+        .select("id, name, image_url, category, sub_category, colors, primary_color, pattern, material")
+        .in("id", outfit.clothing_item_ids);
+        
+      if (!itemsError && items) {
+        clothingItems = items;
+      } else {
+        console.error("Error fetching clothing items:", itemsError);
+      }
+    }
+
+    // 4. Add clothing items to the outfit
+    const outfitWithItems = {
+      ...outfit,
+      items: clothingItems
+    };
+
+    // 5. Add outfit to the occasion
+    const occasionWithOutfit = {
+      ...occasion,
+      outfit: outfitWithItems
+    };
+
+    return res.json({ occasion: occasionWithOutfit });
+    
+  } catch (error) {
+    console.error("Error in GET /occasions/:id:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Delete an Occasion
-router.delete("/:occasion_id", async (req, res) => {
+router.delete("/:occasion_id", authenticateUser, async (req, res) => {
   const { occasion_id } = req.params;
+  const userId = req?.user?.id;
 
   const { data, error } = await supabase
     .from("occasions")
     .delete()
-    .eq("id", occasion_id);
+    .eq("id", occasion_id)
+    .eq("user_id", userId);
 
   if (error) return res.status(400).json({ error: error.message });
   res.json({ message: "Occasion deleted successfully" });
