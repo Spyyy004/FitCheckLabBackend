@@ -5,19 +5,12 @@ import { authenticateUser } from "../middleware/authMiddleware.js"; // Ensures u
 const router = express.Router();
 
 router.get("/", authenticateUser, async (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1];
+  const userId = req?.user?.id;
 
-  if (!token) {
-    return res.status(401).json({ error: "Unauthorized. No token provided." });
-  }
-
-  const { data: userData, error: authError } = await supabase.auth.getUser(token);
-
-  if (authError || !userData?.user) {
+  if (!userId) {
     return res.status(401).json({ error: "Invalid token" });
   }
 
-  const userId = userData.user.id;
 
   // 🟡 Fetch premium status from `profiles`
   const { data: profile, error: profileError } = await supabase
