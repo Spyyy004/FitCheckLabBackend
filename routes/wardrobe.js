@@ -280,7 +280,7 @@ Return your response in the following valid JSON structure only (no commentary):
       {
         role: "user",
         content: [
-          { type: "text", text: "Analyze this clothing item and return output in JSON only." },
+          { type: "text", text: "Analyze the clothing items in the provided image and return output in JSON only." },
           { type: "image_url", image_url: { url: imageUrl } },
         ],
       },
@@ -345,15 +345,15 @@ for (const item of items) {
 if (userId && items?.length > 0) {
   const { error } = await supabase
     .from("profiles")
-    .update({
-      cloth_to_metadata_count: supabase.raw(`cloth_to_metadata_count + ${items.length}`),
-    })
-    .eq("id", userId);
+    .update({})
+    .eq("id", userId)
+    .increment({ cloth_to_metadata_count: items.length });
 
   if (error) {
     console.error("❌ Failed to increment cloth_to_metadata_count:", error);
   }
 }
+
 
   return generatedItems;
 }
