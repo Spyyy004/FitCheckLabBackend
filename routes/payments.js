@@ -35,7 +35,7 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
 
       const { error } = await supabase
         .from("profiles")
-        .update({ is_premium: true })
+        .update({ is_premium: true, subscription_tier : 'ultimate' })
         .eq("email", customerEmail);
 
       if (error) {
@@ -49,7 +49,7 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
 
       const { error } = await supabase
         .from("profiles")
-        .update({ is_premium: true })
+        .update({ is_premium: true, subscription_tier : 'ultimate' })
         .eq("email", customerEmail);
 
       if (error) {
@@ -69,7 +69,7 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
 
       const { error } = await supabase
         .from("profiles")
-        .update({ is_premium: false })
+        .update({ is_premium: true, subscription_tier : 'ultimate' })
         .eq("email", customerEmail);
 
       if (error) {
