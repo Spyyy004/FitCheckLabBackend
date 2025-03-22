@@ -309,7 +309,7 @@ Return your response in the following valid JSON structure only (no commentary):
   if(items?.length === 1){
     return [
       {
-        ...item,
+        ...items[0],
         imageUrl
       }
     ]
