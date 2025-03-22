@@ -219,13 +219,25 @@ router.post("/add", authenticateUser, async (req, res) => {
 router.get("/", authenticateUser, async (req, res) => {
   try {
     const userId = req?.user?.id;
+    const { season, occasion } = req.query;
     
-    // Get all outfits for the user
-    const { data: outfits, error } = await supabase
+    // Start building the query
+    let query = supabase
       .from("outfits")
       .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .eq("user_id", userId);
+    
+    // Add filters if provided
+    if (season) {
+      query = query.eq("season", season);
+    }
+    
+    if (occasion) {
+      query = query.eq("occasion", occasion);
+    }
+    
+    // Complete the query with sorting
+    const { data: outfits, error } = await query.order("created_at", { ascending: false });
     
     if (error) {
       console.error("❌ Database Query Error:", error);
