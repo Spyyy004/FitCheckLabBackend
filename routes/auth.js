@@ -2,6 +2,7 @@ import express from "express";
 import { supabase } from "../config/supabaseClient.js";
 import cookieParser from "cookie-parser";
 import crypto from "crypto"; // Add crypto import for UUID generation
+import { addUserToMixpanel, trackEvent } from "../mixpanel.js";
 
 const router = express.Router();
 router.use(cookieParser()); // Enable cookie parsing
@@ -49,7 +50,11 @@ router.post("/signup", async (req, res) => {
         return res.status(500).json({ error: "User creation failed. No user data returned." });
       }
   
-  
+      addUserToMixpanel(user.id,{
+        email,
+        full_name
+      })
+      trackEvent(user.id,"Signup Success", { method: "Email+Password" });
   
   
       return res.json({
@@ -126,8 +131,9 @@ if (session_token) {
     } 
   }
   
+ 
   
-  
+  trackEvent(user.id, "Login Success", { method: "Email+Password" });
 
     return res.json({
       message: "User signed in successfully.",
@@ -210,6 +216,10 @@ router.post("/google-sign-in", async (req, res) => {
         maxAge: 60 * 60 * 24 * 30 * 1000,
       });
 
+      addUserToMixpanel(user.id,{
+        email
+      })
+      trackEvent(user.id, "Login Success", { method: "Google" });
       return res.json({
         message: "Google sign-up successful.",
         access_token,

@@ -162,7 +162,11 @@ router.post("/", upload.single("image"), async (req, res) => {
         return res.status(500).json({ error: "Error saving analysis to database." });
       }
   
-  
+      trackEvent(user_id,"Outfit Analyzed",{
+        isPremium,
+        imageUrl,
+    
+      })
       // **8️⃣ Return Final Response**
       return res.json({
         imageUrl,
