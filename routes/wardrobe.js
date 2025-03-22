@@ -249,7 +249,7 @@ For each detected item, classify it based on the following attributes:
 6. Primary Color: The dominant color of the item (e.g., "Navy Blue").
 7. Pattern: Any notable patterns (e.g., "Solid", "Striped", "Graphic Print", "Logo-based").
 8. Seasons: All the seasons to wear the item. If it is a special item like Sherwani, Wedding Suit, Bikini, Swim Suit, then return all seasons.
-9. Occasions: The types of events this item is suitable for (e.g., ["Casual", "Streetwear", "Work", "Formal"]).
+9. Occasions: The types of events this item is suitable for. Occassions can be more than one but all of them must be one of these : ["Casual", "Office", "Wedding", "Party", "Date", "Workout", "Formal"].
 10. Style Tags: Keywords that best describe the item's fashion style (e.g., ["Minimalist", "Sporty", "Trendy", "Vintage"]).
 11. Image URL: Generate a cropped or focused image (AI-generated if needed) representing only the specific item.
 
