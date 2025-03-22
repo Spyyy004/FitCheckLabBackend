@@ -13,7 +13,7 @@ router.get("/", authenticateUser, async (req, res) => {
         // 🔹 Fetch user profile from Supabase, including profile image
         const { data: profile, error } = await supabase
             .from("profiles")
-            .select("id, full_name, date_of_birth, gender, height, weight, profile_image_url, created_at, is_premium, ai_outfit_analysis_count, cloth_to_metadata_count, full_outfit_gen_count, ai_occasion_suggestion_count, ai_outfit_from_wardrobe_count")
+            .select("id, full_name, date_of_birth, gender, height, weight, profile_image_url, created_at, is_premium, ai_outfit_analysis_count, cloth_to_metadata_count, full_outfit_gen_count, ai_occasion_suggestion_count, ai_outfit_from_wardrobe_count, subscription_tier")
             .eq("id", userId)
             .single(); // Ensures we get a single user profile
 
