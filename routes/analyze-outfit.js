@@ -126,7 +126,7 @@ router.post("/", upload.single("image"), async (req, res) => {
           {
             role: "user",
             content: [
-              { type: "text", text: `Analyze this outfit image for the occasion: ${occasion}` },
+              { type: "text", text: `Analyze this outfit image for the occasion: ${occasion}. Please make sure your response must contain only and only JSON and nothing else.` },
               { type: "image_url", image_url: { url: imageUrl } },
             ],
           },
@@ -134,38 +134,22 @@ router.post("/", upload.single("image"), async (req, res) => {
       });
   
       // **6️⃣ Validate OpenAI Response**
-    // ✅ Step 1: Validate response structure
-if (
-  !aiResponse ||
-  !aiResponse.choices ||
-  !aiResponse.choices[0]?.message?.content
-) {
-  console.error("❌ OpenAI Response Error: No valid response received");
-  return res.status(500).json({ error: "Error processing AI response." });
-}
-
-// ✅ Step 2: Extract raw text
-let rawResponse = aiResponse.choices[0].message.content.trim();
-
-// ✅ Step 3: Try to extract JSON content
-let analysisResult;
-try {
-  // Try to extract JSON from a ```json block
-  const jsonMatch = rawResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/) || rawResponse.match(/{[\\s\\S]*}/);
-  const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : "";
-
-  if (!jsonString) {
-    throw new Error("No valid JSON found in OpenAI response");
-  }
-
-  analysisResult = JSON.parse(jsonString);
-  console.log("✅ Parsed AI response successfully:", analysisResult);
-} catch (parseError) {
-  console.error("❌ Failed to parse OpenAI response:", parseError);
-  console.error("🔎 Raw AI response:", rawResponse);
-  return res.status(500).json({ error: "Invalid AI response format." });
-}
-
+      if (!aiResponse || !aiResponse.choices || !aiResponse.choices[0]?.message?.content) {
+        console.error("❌ OpenAI Response Error: No valid response received");
+        return res.status(500).json({ error: "Error processing AI response." });
+      }
+  
+      let rawResponse = aiResponse.choices[0].message.content.trim();
+      if (rawResponse.startsWith("```json")) rawResponse = rawResponse.replace("```json", "").trim();
+      if (rawResponse.endsWith("```")) rawResponse = rawResponse.replace("```", "").trim();
+  
+      let analysisResult;
+      try {
+        analysisResult = JSON.parse(rawResponse);
+      } catch (parseError) {
+        console.error("❌ Failed to parse OpenAI response:", parseError);
+        return res.status(500).json({ error: "Invalid AI response format." });
+      }
   
       // **7️⃣ Store Analysis in Supabase**
       const newSessionToken = session_token || uuidv4(); // Generate new session token for guests
