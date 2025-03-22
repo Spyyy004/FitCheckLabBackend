@@ -114,7 +114,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/outfits/${uploadData.path}`;
   
       // **4️⃣ Generate AI Prompt Based on Occasion**
-      const prompt = getPromptForOccasion(occasion || "casual",isPremium);
+      const prompt = getPromptForOccasion(occasion || "casual",true);
   
       // **5️⃣ Call OpenAI API for Outfit Analysis**
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
