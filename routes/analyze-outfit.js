@@ -190,16 +190,18 @@ router.post("/", upload.single("image"), async (req, res) => {
       });
   
     } catch (error) {
-      const timestamp = new Date().toISOString();
-      const logEntry = `[${timestamp}] ❌ Fatal Server Error: ${error.stack || error.message || error}\n`;
+      // const timestamp = new Date().toISOString();
+      // const logEntry = `[${timestamp}] ❌ Fatal Server Error: ${error.stack || error.message || error}\n`;
     
-      // Append to logs/errors.log (create folder if needed)
-      const logFilePath = path.join(__dirname, "../logs/errors.log");
+      // // Append to logs/errors.log (create folder if needed)
+      // const logFilePath = path.join(__dirname, "../logs/errors.log");
     
-      fs.mkdirSync(path.dirname(logFilePath), { recursive: true }); // Ensure logs directory exists
-      fs.appendFileSync(logFilePath, logEntry);
-    
-      console.error(logEntry);
+      // fs.mkdirSync(path.dirname(logFilePath), { recursive: true }); // Ensure logs directory exists
+      // fs.appendFileSync(logFilePath, logEntry);
+      trackEvent("","Outfit Analysis Failed",{
+        error : error?.message ?? "Error Message"
+      })
+      
       return res.status(500).json({ error: "Internal Server Error" });
     }
   });
