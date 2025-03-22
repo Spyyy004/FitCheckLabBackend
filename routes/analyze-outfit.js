@@ -198,9 +198,10 @@ router.post("/", upload.single("image"), async (req, res) => {
     
       // fs.mkdirSync(path.dirname(logFilePath), { recursive: true }); // Ensure logs directory exists
       // fs.appendFileSync(logFilePath, logEntry);
-      trackEvent("","Outfit Analysis Failed",{
+      trackEvent("","API Failure",{
         error : error?.message ?? "Error Message",
-        image_url : imageUrl
+        type: "signup",
+        imageUrl
       })
       
       return res.status(500).json({ error: "Internal Server Error" });

@@ -1,7 +1,7 @@
 import express from "express";
 import { supabase } from "../config/supabaseClient.js";
 import { authenticateUser } from "../middleware/authMiddleware.js"; // Ensures user is logged in
-
+import { trackEvent } from "../mixpanel.js";
 const router = express.Router();
 
 // **🔹 Get User Profile**
@@ -29,6 +29,10 @@ router.get("/", authenticateUser, async (req, res) => {
         return res.json(profile);
     } catch (error) {
         console.error("❌ Server error fetching profile:", error);
+        trackEvent("","API Failure",{
+            error : error?.message ?? "Error Message",
+            type: "get-profile"
+          })
         return res.status(500).json({ error: "Internal Server Error" });
     }
 });

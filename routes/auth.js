@@ -63,6 +63,10 @@ router.post("/signup", async (req, res) => {
       });
   
     } catch (error) {
+      trackEvent("","API Failure",{
+        error : error?.message ?? "Error Message",
+        type: "signup"
+      })
       console.error("❌ Server Error:", error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
@@ -142,6 +146,10 @@ if (session_token) {
     });
   } catch (error) {
     console.error("❌ Server Error:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "signin"
+    })
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -269,6 +277,10 @@ router.post("/google-sign-in", async (req, res) => {
 
   } catch (error) {
     console.error("❌ Server Error:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "google-sign-in"
+    })
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -285,6 +297,10 @@ router.post("/signout", async (req, res) => {
 
     return res.json({ message: "User signed out successfully." });
   } catch (error) {
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "signout"
+    })
     console.error("❌ Server Error:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }

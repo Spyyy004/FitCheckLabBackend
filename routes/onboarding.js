@@ -2,7 +2,7 @@ import express from "express";
 import multer from "multer";
 import { supabase } from "../config/supabaseClient.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
-
+import { trackEvent } from "../mixpanel.js";
 const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -62,6 +62,10 @@ router.post("/", authenticateUser, upload.single("profile_image"), async (req, r
   
     } catch (error) {
       console.error("❌ Server Error:", error);
+      trackEvent("","API Failure",{
+        error : error?.message ?? "Error Message",
+        type: "onboarding"
+      })
       return res.status(500).json({ error: "Internal Server Error" });
     }
   });

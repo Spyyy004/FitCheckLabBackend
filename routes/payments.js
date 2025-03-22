@@ -88,6 +88,10 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
     return res.status(200).json({ success: true });
   } catch (error) {
     console.error("❌ Webhook Processing Error:", error);
+    trackEvent("","API Failure",{
+        error : error?.message ?? "Error Message",
+        type: "payments-webhook"
+      })
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

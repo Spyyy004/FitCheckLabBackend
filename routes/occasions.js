@@ -1,6 +1,7 @@
 import express from "express";
 import { supabase } from "../config/supabaseClient.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
+import { trackEvent } from "../mixpanel.js";
 const router = express.Router();
 
 // Add an Occasion
@@ -12,7 +13,14 @@ router.post("/add",authenticateUser, async (req, res) => {
     .from("occasions")
     .insert([{ user_id: userId, occasion, name, date_time, recurring, season, outfit_id }]);
 
-  if (error) return res.status(400).json({ error: error.message });
+  if (error)
+    {
+      trackEvent(userId,"API Failure",{
+        error : error?.message ?? "Error Message",
+        type: "add-occassion"
+      })
+      return res.status(400).json({ error: error.message });
+    }
   res.json({ message: "Occasion added successfully", occasion: data });
 });
 
@@ -113,6 +121,10 @@ router.get("/",authenticateUser, async (req, res) => {
     
   } catch (error) {
     console.error("Error in GET /occasions:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "get-occassion"
+    })
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -187,6 +199,10 @@ router.get("/:id", authenticateUser, async (req, res) => {
     
   } catch (error) {
     console.error("Error in GET /occasions/:id:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "get-single-occassion"
+    })
     return res.status(500).json({ error: "Internal server error" });
   }
 });

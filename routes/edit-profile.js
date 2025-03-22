@@ -1,6 +1,6 @@
 import express from "express";
 import { supabase } from "../config/supabaseClient.js"; // Ensure you have a valid Supabase client setup
-
+import { trackEvent } from "../mixpanel.js";
 const router = express.Router();
 
 // 🔹 Update Profile Endpoint
@@ -47,6 +47,10 @@ router.put("/", async (req, res) => {
     return res.json({ message: "Profile updated successfully.", profile: data[0] });
 
   } catch (error) {
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "edit-profile"
+    })
     console.error("❌ Server Error:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }

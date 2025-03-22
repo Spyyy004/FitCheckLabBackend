@@ -1,10 +1,15 @@
 import express from "express";
 import { supabase } from "../config/supabaseClient.js";
 import { authenticateUser } from "../middleware/authMiddleware.js"; // Ensures user is logged in
-
+import { trackEvent } from "../mixpanel.js";
 const router = express.Router();
 
 router.get("/", authenticateUser, async (req, res) => {
+
+  try {
+
+  
+
   const userId = req?.user?.id;
 
   if (!userId) {
@@ -44,6 +49,14 @@ router.get("/", authenticateUser, async (req, res) => {
   }));
 
   res.json(formattedData);
+}
+catch(error){
+  trackEvent("","API Failure",{
+    error : error?.message ?? "Error Message",
+    type: "recent-analysis"
+  })
+  return res.status(500).json({ error: "Some Error occured" });
+}
 });
 
 

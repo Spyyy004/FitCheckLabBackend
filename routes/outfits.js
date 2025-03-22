@@ -5,7 +5,7 @@ import { fetchWardrobeItems } from "./wardrobe.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 import { OpenAI } from "openai";
 import { createOccasionWithOutfit } from "./occasions.js";
-
+import { trackEvent } from "../mixpanel.js";
 const router = express.Router();
 
 router.post("/generate", authenticateUser, async (req, res) => {
@@ -135,6 +135,10 @@ router.post("/generate", authenticateUser, async (req, res) => {
     return res.json({ ...result, ...outfitRecommendation });
   } catch (error) {
     console.error("❌ Server Error:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "generate-outfit"
+    })
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -247,6 +251,10 @@ router.post("/add", authenticateUser, async (req, res) => {
     
   } catch (error) {
     console.error("❌ Server Error:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "add-outfit"
+    })
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -297,6 +305,10 @@ router.get("/", authenticateUser, async (req, res) => {
     
   } catch (error) {
     console.error("❌ Server Error:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "get-outfits"
+    })
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -335,6 +347,10 @@ router.get("/:id", authenticateUser, async (req, res) => {
     
   } catch (error) {
     console.error("❌ Server Error:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "get-single-outfit"
+    })
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -393,6 +409,10 @@ router.put("/:id", authenticateUser, async (req, res) => {
     
   } catch (error) {
     console.error("❌ Server Error:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "update-outfit"
+    })
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -419,6 +439,10 @@ router.delete("/:id", authenticateUser, async (req, res) => {
     
   } catch (error) {
     console.error("❌ Server Error:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "delete-outfit"
+    })
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

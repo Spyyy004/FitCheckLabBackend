@@ -1,7 +1,7 @@
 import express from "express";
 import { supabase } from "../config/supabaseClient.js";
 import { authenticateUser } from "../middleware/authMiddleware.js"; // Middleware for user authentication
-
+import { trackEvent } from "../mixpanel.js";
 const router = express.Router();
 
 /**
@@ -30,7 +30,10 @@ router.get("/:id", authenticateUser, async (req, res) => {
 
     return res.json(data);
   } catch (error) {
-    console.error("❌ Server Error:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "get-single-cloth"
+    })
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
