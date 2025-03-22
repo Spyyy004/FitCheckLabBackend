@@ -173,7 +173,7 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
       }
 
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
-
+      const userId = req?.user?.id ?? "";
       const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId });
 
       for (const item of analysisItems) {
