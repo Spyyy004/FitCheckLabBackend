@@ -108,6 +108,29 @@ router.post("/generate", authenticateUser, async (req, res) => {
     try {
       outfitRecommendation = JSON.parse(rawResponse);
       console.log("Parsed AI outfit recommendation:", outfitRecommendation);
+
+      if (userId) {
+        const { data: profile, error: fetchError } = await supabase
+          .from("profiles")
+          .select("ai_outfit_from_wardrobe_count")
+          .eq("id", userId)
+          .single();
+      
+        if (fetchError) {
+          console.warn("⚠️ Couldn't fetch profile usage count:", fetchError);
+        } else {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              ai_outfit_from_wardrobe_count: (profile.ai_outfit_from_wardrobe_count || 0) + 1,
+            })
+            .eq("id", userId);
+      
+          if (updateError) {
+            console.error("⚠️ Failed to increment outfit-from-wardrobe count:", updateError);
+          }
+        }
+      }
     } catch (parseError) {
       console.error("❌ Failed to parse OpenAI response:", parseError);
       return res.status(500).json({ error: "Invalid AI response format." });
