@@ -216,10 +216,10 @@ router.post("/google-sign-in", async (req, res) => {
         maxAge: 60 * 60 * 24 * 30 * 1000,
       });
 
-      addUserToMixpanel(user.id,{
+      addUserToMixpanel(userId,{
         email
       })
-      trackEvent(user.id, "Login Success", { method: "Google" });
+      trackEvent(userId, "Login Success", { method: "Google" });
       return res.json({
         message: "Google sign-up successful.",
         access_token,
