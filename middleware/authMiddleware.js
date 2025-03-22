@@ -17,6 +17,12 @@ export const authenticateUser = async (req, res, next) => {
       accessToken = req.headers.authorization.split(" ")[1]; // Extract token from "Bearer <token>"
     }
 
+    if(!refreshToken){
+      refreshToken = req.headers['x-refresh-token'] || req.cookies.refresh_token;
+
+    }
+
+
     // If no access token found in both cookies & header, return 401
     if (!accessToken) {
       return res.status(401).json({ error: "Unauthorized: No access token provided." });
