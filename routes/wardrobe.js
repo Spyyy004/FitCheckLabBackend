@@ -306,6 +306,14 @@ Return your response in the following valid JSON structure only (no commentary):
   }
 
   const generatedItems = [];
+  if(items?.length === 1){
+    return [
+      {
+        ...item,
+        imageUrl
+      }
+    ]
+  }
   for (const item of items) {
     try {
       const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}`;
