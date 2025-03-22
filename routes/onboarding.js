@@ -14,11 +14,11 @@ router.post("/", authenticateUser, upload.single("profile_image"), async (req, r
       const user_id = req.user.id;
   
       // 🔹 Extract form fields from `req.body`
-      const { date_of_birth, gender, height, weight } = req.body;
+      const { date_of_birth = Date.now(), gender, height = 170, weight = 69 } = req.body;
       let profile_image_url = null;
   
       // 🛑 Validate required fields
-      if ( !date_of_birth || !gender || !height || !weight) {
+      if ( !gender ) {
         return res.status(400).json({ error: "All fields are required." });
       }
   
