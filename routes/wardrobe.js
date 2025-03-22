@@ -32,7 +32,7 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
       5. **Colors**: A list of all detected colors in the item (e.g., ["Black", "White", "Red"]).
       6. **Primary Color**: The dominant color of the item (e.g., "Navy Blue").
       7. **Pattern**: Any notable patterns (e.g., "Solid", "Striped", "Graphic Print", "Logo-based").
-      8. **Seasons**: All the seasons to wear the item. If it is a special item like Sherwani, Wedding Suit, Bikini, Swim Suit, then give all seasons (e.g., ["Summer", "Winter"]).
+      8. **Seasons**: All the seasons to wear the item. If it is a special item like Sherwani, Wedding Suit, Bikini, Swim Suit, then return the following as output : ["Summer", "Winter", "Fall", "Spring", "Rainy"].
       9. **Occasions**: The types of events this item is suitable for (e.g., ["Casual", "Streetwear", "Work", "Formal"]).
       10. **Style Tags**: Keywords that best describe the item's fashion style (e.g., ["Minimalist", "Sporty", "Trendy", "Vintage"]).
       11. **Image URL**: Generate a cropped or focused image (AI-generated if needed) representing only the specific item. You may return base64 if generated OR provide a new hosted image link if inferred. Do NOT repeat the full outfit image.
