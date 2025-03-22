@@ -5,7 +5,8 @@ import { supabase } from "../config/supabaseClient.js";
 import { v4 as uuidv4 } from "uuid"; 
 import { authenticateUser } from "../middleware/authMiddleware.js";
 import { trackEvent } from "../mixpanel.js";
-
+import fs from "fs";
+import path from "path";
 const upload = multer({ storage: multer.memoryStorage() });
 
 
@@ -189,7 +190,16 @@ router.post("/", upload.single("image"), async (req, res) => {
       });
   
     } catch (error) {
-      console.error("❌ Fatal Server Error:", error);
+      const timestamp = new Date().toISOString();
+      const logEntry = `[${timestamp}] ❌ Fatal Server Error: ${error.stack || error.message || error}\n`;
+    
+      // Append to logs/errors.log (create folder if needed)
+      const logFilePath = path.join(__dirname, "../logs/errors.log");
+    
+      fs.mkdirSync(path.dirname(logFilePath), { recursive: true }); // Ensure logs directory exists
+      fs.appendFileSync(logFilePath, logEntry);
+    
+      console.error(logEntry);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   });
