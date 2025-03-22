@@ -33,7 +33,7 @@ app.use(
 );
 // ✅ Fix: Ensure routes are correctly used
 app.use("/api/auth", authRoutes);
-app.use("/api/occasions", occasionRoutes);
+app.use("/api/occasion-events", occasionRoutes);
 app.use("/api/outfits", outfitRoutes);
 app.use("/api/analyze-outfit", analyzeRoutes); // Existing Analysis Route
 app.use("/api/recent-analysis", recentAnalysisRoutes);
@@ -44,7 +44,6 @@ app.use("/api/wardrobe",wardrobeRoutes);
 app.use("/api/update-profile",editProfileRoutes)
 app.use("/api/wardrobe/item",singleClothingItem)
 app.use("/api/payments",paymentsWebhook)
-app.use('/api/payments',paymentsWebhook)
 // Start Server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
