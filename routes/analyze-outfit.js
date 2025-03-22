@@ -162,7 +162,7 @@ router.post("/", upload.single("image"), async (req, res) => {
             user_id: user_id || null, // ✅ If logged in, store `user_id`, otherwise `null`
             session_token: user_id ? null : newSessionToken, // ✅ Store session_token only for guests
             image_url: imageUrl,
-            overall_score: analysisResult.overall_score,
+            overall_score: analysisResult?.overall_score ?? 0,
             analysis: analysisResult,
             
           },
