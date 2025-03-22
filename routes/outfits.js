@@ -4,6 +4,7 @@ import { supabase } from "../config/supabaseClient.js";
 import { fetchWardrobeItems } from "./wardrobe.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 import { OpenAI } from "openai";
+import { createOccasionWithOutfit } from "./occasions.js";
 
 const router = express.Router();
 
@@ -161,7 +162,8 @@ router.post("/add", authenticateUser, async (req, res) => {
       name, 
       itemIds, 
       occasion, 
-      season 
+      season,
+      occasionData,
     } = req.body;
     
     // Validate required fields
@@ -202,11 +204,33 @@ router.post("/add", authenticateUser, async (req, res) => {
     }
     
     console.log(`✅ Outfit "${name}" saved with ID: ${outfit[0].id}`);
+
+    // Create an occasion if occasion data is provided
+    let createdOccasion = null;
+    if (occasionData && occasionData.name) {
+      try {
+        // If season is not explicitly provided in occasionData, use the outfit's season
+        if (!occasionData.season && season) {
+          occasionData.season = season;
+        }
+
+        if (!occasionData.occasion && occasion) {
+          occasionData.occasion = occasion;
+        }
+        
+        createdOccasion = await createOccasionWithOutfit(userId, occasionData, outfit[0].id);
+        console.log(`✅ Occasion created for outfit: ${createdOccasion.name}`);
+      } catch (occasionError) {
+        console.error("❌ Error creating occasion:", occasionError);
+        // Continue even if occasion creation fails
+      }
+    }
   
-    
-    // Return success response with the outfit data
+    // Return success response with the outfit and occasion data if created
     return res.status(201).json({
       message: "Outfit added successfully",
+      outfit: outfit[0],
+      occasion: createdOccasion
     });
     
   } catch (error) {

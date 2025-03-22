@@ -206,4 +206,46 @@ router.delete("/:occasion_id", authenticateUser, async (req, res) => {
   res.json({ message: "Occasion deleted successfully" });
 });
 
+// Create a new occasion with outfit data
+export async function createOccasionWithOutfit(userId, occasionData, outfitId) {
+  try {
+    if (!userId || !outfitId) {
+      throw new Error("User ID and outfit ID are required");
+    }
+
+    // Validate required fields
+    if (!occasionData.name || !occasionData.occasion) {
+      throw new Error("Occasion name and type are required");
+    }
+
+    // Prepare occasion data
+    const newOccasion = {
+      user_id: userId,
+      outfit_id: outfitId,
+      name: occasionData.name,
+      occasion: occasionData.occasion,
+      date_time: occasionData.date_time || new Date().toISOString(),
+      recurring: occasionData.recurring || false,
+      season: occasionData.season || null,
+    };
+
+    // Insert the occasion into the database
+    const { data, error } = await supabase
+      .from("occasions")
+      .insert([newOccasion])
+      .select();
+
+    if (error) {
+      console.error("Error creating occasion:", error);
+      throw new Error(`Failed to create occasion: ${error.message}`);
+    }
+
+    console.log(`✅ Occasion "${newOccasion.name}" created successfully for outfit ID: ${outfitId}`);
+    return data[0];
+  } catch (error) {
+    console.error("❌ Error in createOccasionWithOutfit:", error);
+    throw error;
+  }
+}
+
 export default router;
