@@ -79,7 +79,7 @@ router.post("/", upload.single("image"), async (req, res) => {
         if (profileError) {
           console.error("⚠️ Error fetching user profile:", profileError);
         } else {
-          isPremium = userProfile?.is_premium || false;
+          isPremium = userProfile?.is_premium || true;
           const { error: updateError } = await supabase
           .from("profiles")
           .update({

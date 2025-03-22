@@ -25,7 +25,7 @@ app.use(cookieParser());
 // ✅ Set up CORS properly
 app.use(
   cors({
-    origin: ["http://localhost:8080","https://fitchecklab.in"], // ✅ Allow your frontend domain explicitly
+    origin: ["http://localhost:8080","https://fitchecklab.in","https://preview--outfit-oracle-assistant.lovable.app/"], // ✅ Allow your frontend domain explicitly
     credentials: true, // ✅ Allow cookies/authentication
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
