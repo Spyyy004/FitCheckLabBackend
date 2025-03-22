@@ -75,7 +75,6 @@ router.post("/generate", authenticateUser, async (req, res) => {
     // Step 4: Call OpenAI API for outfit recommendation
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    console.log("🤖 Sending request to OpenAI for outfit generation...");
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -96,18 +95,15 @@ router.post("/generate", authenticateUser, async (req, res) => {
       return res.status(500).json({ error: "Error processing AI response." });
     }
 
-    console.log("✅ AI Outfit Recommendation Received");
     let rawResponse = aiResponse.choices[0].message.content.trim();
     if (rawResponse.startsWith("```json"))
       rawResponse = rawResponse.replace("```json", "").trim();
     if (rawResponse.endsWith("```"))
       rawResponse = rawResponse.replace("```", "").trim();
 
-    console.log("rawResponse", rawResponse)
     let outfitRecommendation = {};
     try {
       outfitRecommendation = JSON.parse(rawResponse);
-      console.log("Parsed AI outfit recommendation:", outfitRecommendation);
 
       if (userId) {
         const { data: profile, error: fetchError } = await supabase
@@ -198,12 +194,7 @@ router.post("/add", authenticateUser, async (req, res) => {
       return res.status(400).json({ error: "At least one clothing item is required." });
     }
     
-    console.log("📝 Adding new outfit:", {
-      name,
-      itemCount: itemIds.length,
-      occasion: occasion || "Not specified",
-      season: season || "Not specified"
-    });
+    
     
     // Store outfit in the database
     const { data: outfit, error } = await supabase
@@ -226,7 +217,6 @@ router.post("/add", authenticateUser, async (req, res) => {
       return res.status(500).json({ error: "Error saving outfit to database." });
     }
     
-    console.log(`✅ Outfit "${name}" saved with ID: ${outfit[0].id}`);
 
     // Create an occasion if occasion data is provided
     let createdOccasion = null;
@@ -242,7 +232,6 @@ router.post("/add", authenticateUser, async (req, res) => {
         }
         
         createdOccasion = await createOccasionWithOutfit(userId, occasionData, outfit[0].id);
-        console.log(`✅ Occasion created for outfit: ${createdOccasion.name}`);
       } catch (occasionError) {
         console.error("❌ Error creating occasion:", occasionError);
         // Continue even if occasion creation fails
@@ -396,7 +385,6 @@ router.put("/:id", authenticateUser, async (req, res) => {
       return res.status(404).json({ error: "Outfit not found or you don't have permission to update it." });
     }
     
-    console.log(`✅ Outfit "${name}" updated successfully`);
     
     // Return success response with the updated outfit data
     return res.json({

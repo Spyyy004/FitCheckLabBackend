@@ -240,7 +240,6 @@ export async function createOccasionWithOutfit(userId, occasionData, outfitId) {
       throw new Error(`Failed to create occasion: ${error.message}`);
     }
 
-    console.log(`✅ Occasion "${newOccasion.name}" created successfully for outfit ID: ${outfitId}`);
     return data[0];
   } catch (error) {
     console.error("❌ Error in createOccasionWithOutfit:", error);

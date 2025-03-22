@@ -31,7 +31,6 @@ export const authenticateUser = async (req, res, next) => {
     // Verify user from Supabase
     const { data, error } = await supabase.auth.getUser(accessToken);
     let user = data?.user;
-    console.log(user,'USER IN AUTH')
     // If token is expired or invalid, try refreshing
     if (error || !user) {
       console.warn(" Access token expired or invalid, attempting refresh...");

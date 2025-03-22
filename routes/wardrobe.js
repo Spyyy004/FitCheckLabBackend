@@ -100,7 +100,6 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
         console.error("❌ Failed to parse OpenAI response:", parseError);
         return res.status(500).json({ error: "Invalid AI response format." });
       }
-      console.log(analysisResult.items.length,'SLAOAALALAKA')
       
       for (const item of analysisResult.items) {
         const images_url =  item.image_url || "https://media.istockphoto.com/id/1363802563/vector/clothes-hanger-vector-icon-hanger-isolated-vector-illustration-on-white-background.jpg?s=612x612&w=0&k=20&c=Qy85rXiOK7t4PRYlSk5JG4rk87FVhPgNn7Kfqo5tS7Y="
@@ -165,17 +164,7 @@ export async function fetchWardrobeItems({
   fieldsToFetch,
 }) {
   try {
-    console.log("🔍 Fetching wardrobe items with parameters:", {
-      userId,
-      occasion,
-      season,
-      category,
-      subCategory,
-      color,
-      pattern,
-      material,
-      brand,
-    });
+  
 
     if (!userId) {
       throw new Error("User ID is required");
@@ -195,7 +184,6 @@ export async function fetchWardrobeItems({
       throw new Error(`Error fetching wardrobe items: ${dbError.message}`);
     }
 
-    console.log(`✅ Retrieved ${allItems.length} wardrobe items`);
 
     // Filter items based on provided parameters
     const filteredItems = [];
@@ -275,7 +263,6 @@ export async function fetchWardrobeItems({
       });
     }
 
-    console.log(`✅ Filtered ${filteredItems.length} wardrobe items with applied filters`);
 
     return {
       filteredItems,
