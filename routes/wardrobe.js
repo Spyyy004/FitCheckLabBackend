@@ -320,7 +320,7 @@ for (const item of items) {
     const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}`;
 
     const imageGen = await openai.images.generate({
-      model: "dall-e-3",
+      model: "dall-e-2",
       prompt: textPrompt,
       size: '256x256',
       n: 1,
