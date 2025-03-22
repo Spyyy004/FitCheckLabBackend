@@ -1,10 +1,10 @@
 import express from "express";
 import { supabase } from "../config/supabaseClient.js";
-import authMiddleware from "../middleware/authMiddleware.js";
+import { authenticateUser } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // Add an Occasion
-router.post("/add",authMiddleware, async (req, res) => {
+router.post("/add",authenticateUser, async (req, res) => {
   const userId = req?.user?.id;
   const { occasion, name, date_time, recurring, season, outfit_id } = req.body;
 
@@ -17,7 +17,7 @@ router.post("/add",authMiddleware, async (req, res) => {
 });
 
 // Get Occasions for a User
-router.get("/",authMiddleware, async (req, res) => {
+router.get("/",authenticateUser, async (req, res) => {
   const userId = req?.user?.id;
 
   const { data, error } = await supabase
