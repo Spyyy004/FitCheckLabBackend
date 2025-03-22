@@ -14,7 +14,7 @@ router.post("/", authenticateUser, upload.single("profile_image"), async (req, r
       const user_id = req.user.id;
   
       // 🔹 Extract form fields from `req.body`
-      const { date_of_birth = Date.now(), gender, height = 170, weight = 69 } = req.body;
+      const { date_of_birth = '2007-03-18T18:25:37.332149Z', gender, height = 170, weight = 69 } = req.body;
       let profile_image_url = null;
   
       // 🛑 Validate required fields
