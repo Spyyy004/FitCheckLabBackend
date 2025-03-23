@@ -237,7 +237,7 @@ Return your response in the following valid JSON structure only (no commentary):
   
 for (const item of items) {
   try {
-    const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}`;
+    const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}. Image must have a realistic tone and lighting.`;
 
     const imageGen = await openai.images.generate({
       model: "dall-e-2",
