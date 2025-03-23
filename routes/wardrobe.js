@@ -512,21 +512,61 @@ router.get("/", authenticateUser, async (req, res) => {
   }
 });
 
+// router.get("/all", async (req, res) => {
+//   const { data, error } = await supabase
+//     .from("catalog_basics")
+//     .select("*")
+//     .order("created_at", { ascending: true });
+
+//   if (error) {
+//     console.error("❌ Error fetching catalog items:", error);
+//     return res.status(500).json({ error: "Failed to fetch catalog items." });
+//   }
+
+//   return res.status(200).json({ data });
+// });
+
+// Helper function to generate clothing analysis prompt
+
+
 router.get("/all", async (req, res) => {
-  const { data, error } = await supabase
+  const userId = req?.user?.id;
+
+  const { data: catalogItems, error: catalogError } = await supabase
     .from("catalog_basics")
     .select("*")
     .order("created_at", { ascending: true });
 
-  if (error) {
-    console.error("❌ Error fetching catalog items:", error);
+  if (catalogError) {
+    console.error("❌ Error fetching catalog items:", catalogError);
     return res.status(500).json({ error: "Failed to fetch catalog items." });
   }
 
-  return res.status(200).json({ data });
+  let userItemIds = new Set();
+
+  if (userId) {
+    const { data: wardrobeItems, error: wardrobeError } = await supabase
+      .from("clothing_items")
+      .select("catalog_id") // assuming you store catalog item's ID in this field
+      .eq("user_id", userId);
+
+    if (wardrobeError) {
+      console.error("❌ Error fetching user's wardrobe items:", wardrobeError);
+      return res.status(500).json({ error: "Failed to fetch wardrobe data." });
+    }
+
+    userItemIds = new Set(wardrobeItems.map((item) => item.catalog_id));
+  }
+
+  const enrichedCatalog = catalogItems.map((item) => ({
+    ...item,
+    isAdded: userItemIds.has(item.id),
+  }));
+
+  return res.status(200).json({ data: enrichedCatalog });
 });
 
-// Helper function to generate clothing analysis prompt
+
 function getClothingAnalysisPrompt() {
   return `You are an expert fashion analyst specializing in wardrobe management. 
   Analyze the provided clothing item image and extract detailed information about it.
