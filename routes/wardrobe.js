@@ -290,7 +290,48 @@ if (userId && items?.length > 0) {
 }
 
 
+router.post("/add-from-catalog",authenticateUser, async (req, res) => {
+  const userId = req?.user?.id;
+  const items = req.body?.items;
 
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized. User not found." });
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: "No clothing items provided." });
+  }
+
+  const insertPayload = items.map((item) => ({
+    user_id: userId,
+    category: item.category,
+    sub_category: item.subcategory,
+    material: item.material,
+    brand: null,
+    fit_type: item.fit,
+    image_url: item.image_url || null,
+    name: item.name,
+    colors: [item.color], // assuming color is string
+    primary_color: item.color,
+    pattern: item.pattern,
+    seasons: item.seasons || [],
+    occasions: item.occasions || [],
+    style_tags: item.style_tags || [],
+    analysis_json: item, // we keep full item as raw JSON for traceability
+  }));
+
+  const { data, error } = await supabase
+    .from("clothing_items")
+    .insert(insertPayload)
+    .select();
+
+  if (error) {
+    console.error("❌ Error inserting wardrobe items:", error);
+    return res.status(500).json({ error: "Failed to add items to wardrobe." });
+  }
+
+  return res.status(200).json({ message: "Clothes added to wardrobe.", data });
+});
 
 export async function fetchWardrobeItems({
   userId,
@@ -471,6 +512,19 @@ router.get("/", authenticateUser, async (req, res) => {
   }
 });
 
+router.get("/all", async (req, res) => {
+  const { data, error } = await supabase
+    .from("catalog_basics")
+    .select("*")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("❌ Error fetching catalog items:", error);
+    return res.status(500).json({ error: "Failed to fetch catalog items." });
+  }
+
+  return res.status(200).json({ data });
+});
 
 // Helper function to generate clothing analysis prompt
 function getClothingAnalysisPrompt() {
