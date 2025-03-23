@@ -529,7 +529,7 @@ router.get("/", authenticateUser, async (req, res) => {
 // Helper function to generate clothing analysis prompt
 
 
-router.get("/all", async (req, res) => {
+router.get("/all",authenticateUser, async (req, res) => {
   const userId = req?.user?.id;
 
   const { data: catalogItems, error: catalogError } = await supabase
