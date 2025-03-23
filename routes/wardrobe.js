@@ -547,7 +547,7 @@ router.get("/all",authenticateUser, async (req, res) => {
   if (userId) {
     const { data: wardrobeItems, error: wardrobeError } = await supabase
       .from("clothing_items")
-      .select("catalog_id") // assuming you store catalog item's ID in this field
+      .select("id") // assuming you store catalog item's ID in this field
       .eq("user_id", userId);
 
     if (wardrobeError) {
