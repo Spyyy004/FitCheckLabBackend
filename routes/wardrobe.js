@@ -555,12 +555,12 @@ router.get("/all",authenticateUser, async (req, res) => {
       return res.status(500).json({ error: "Failed to fetch wardrobe data." });
     }
 
-    userItemIds = new Set(wardrobeItems.map((item) => item.id));
+    userItemIds = new Set(wardrobeItems.map((item) => item.name));
   }
 
   const enrichedCatalog = catalogItems.map((item) => ({
     ...item,
-    isAdded: userItemIds.has(item.id),
+    isAdded: userItemIds.has(item.name),
   }));
 
   return res.status(200).json({ data: enrichedCatalog });
