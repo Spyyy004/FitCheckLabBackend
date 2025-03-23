@@ -35,7 +35,64 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
       const userId = req?.user?.id ?? "";
       const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId });
 
+      // for (const item of analysisItems) {
+      //   const { data: clothingItem, error: dbError } = await supabase
+      //     .from("clothing_items")
+      //     .insert([
+      //       {
+      //         user_id: req?.user?.id,
+      //         category: category || item["Category"],
+      //         sub_category: subCategory || item["Subcategory"],
+      //         material: material || item["Material"],
+      //         brand: brand || null,
+      //         fit_type: fit || item["Fit"],
+      //         image_url: item.generated_image_url || imageUrl,
+      //         name: item.suggested_name || `${item["Primary Color"] || ""} ${item["Subcategory"]}`,
+      //         colors: item["Colors"],
+      //         primary_color: item["Primary Color"],
+      //         pattern: item["Pattern"],
+      //         seasons: item["Seasons"],
+      //         occasions: item["Occasions"],
+      //         style_tags: item["Style Tags"],
+      //         analysis_json: item,
+      //       },
+      //     ])
+      //     .select();
+
+      //   if (dbError) {
+      //     console.error("❌ Database Insert Error:", dbError);
+      //     return res.status(500).json({ error: "Error saving clothing item to database." });
+      //   }
+
+      //   insertedItems.push(clothingItem[0]);
+      // }
+
       for (const item of analysisItems) {
+        let finalImageUrl = imageUrl; // fallback image
+      
+        try {
+          if (item.generated_image_url) {
+            const response = await fetch(item.generated_image_url);
+            const buffer = await response.arrayBuffer();
+      
+            const imagePath = `wardrobe/generated_${Date.now()}_${Math.random()}.png`;
+      
+            const { data: uploaded, error: uploadError } = await supabase.storage
+              .from("wardrobe")
+              .upload(imagePath, Buffer.from(buffer), {
+                contentType: "image/png",
+              });
+      
+            if (uploadError) {
+              console.warn("⚠️ Supabase Upload Failed. Using fallback image.", uploadError);
+            } else {
+              finalImageUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/wardrobe/${uploaded.path}`;
+            }
+          }
+        } catch (err) {
+          console.warn("⚠️ Failed to fetch/upload generated image:", err);
+        }
+      
         const { data: clothingItem, error: dbError } = await supabase
           .from("clothing_items")
           .insert([
@@ -46,7 +103,7 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
               material: material || item["Material"],
               brand: brand || null,
               fit_type: fit || item["Fit"],
-              image_url: item.generated_image_url || imageUrl,
+              image_url: finalImageUrl,
               name: item.suggested_name || `${item["Primary Color"] || ""} ${item["Subcategory"]}`,
               colors: item["Colors"],
               primary_color: item["Primary Color"],
@@ -58,15 +115,15 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
             },
           ])
           .select();
-
+      
         if (dbError) {
           console.error("❌ Database Insert Error:", dbError);
           return res.status(500).json({ error: "Error saving clothing item to database." });
         }
-
+      
         insertedItems.push(clothingItem[0]);
       }
-
+      
       trackEvent(req?.user?.id, "Wardrobe", {
         items: analysisItems?.length,
         type: "add-item",
