@@ -532,6 +532,7 @@ router.get("/", authenticateUser, async (req, res) => {
 router.get("/all",authenticateUser, async (req, res) => {
   const userId = req?.user?.id;
 
+  // Step 1: Fetch all catalog items
   const { data: catalogItems, error: catalogError } = await supabase
     .from("catalog_basics")
     .select("*")
@@ -542,29 +543,32 @@ router.get("/all",authenticateUser, async (req, res) => {
     return res.status(500).json({ error: "Failed to fetch catalog items." });
   }
 
-  let userItemIds = new Set();
-
-  if (userId) {
-    const { data: wardrobeItems, error: wardrobeError } = await supabase
-      .from("clothing_items")
-      .select("id") // assuming you store catalog item's ID in this field
-      .eq("user_id", userId);
-
-    if (wardrobeError) {
-      console.error("❌ Error fetching user's wardrobe items:", wardrobeError);
-      return res.status(500).json({ error: "Failed to fetch wardrobe data." });
-    }
-
-    userItemIds = new Set(wardrobeItems.map((item) => item.name));
+  if (!userId) {
+    // If user is not logged in, return everything
+    return res.status(200).json({ data: catalogItems });
   }
 
-  const enrichedCatalog = catalogItems.map((item) => ({
-    ...item,
-    isAdded: userItemIds.has(item.name),
-  }));
+  // Step 2: Get clothing item names already added by user
+  const { data: wardrobeItems, error: wardrobeError } = await supabase
+    .from("clothing_items")
+    .select("name")
+    .eq("user_id", userId);
 
-  return res.status(200).json({ data: enrichedCatalog });
+  if (wardrobeError) {
+    console.error("❌ Error fetching user's wardrobe items:", wardrobeError);
+    return res.status(500).json({ error: "Failed to fetch wardrobe data." });
+  }
+
+  const addedNames = new Set(wardrobeItems.map(item => item.name.trim().toLowerCase()));
+
+  // Step 3: Filter out catalog items that are already in wardrobe by name
+  const filteredCatalog = catalogItems.filter(
+    item => !addedNames.has(item.name.trim().toLowerCase())
+  );
+
+  return res.status(200).json({ data: filteredCatalog });
 });
+
 
 
 function getClothingAnalysisPrompt() {
