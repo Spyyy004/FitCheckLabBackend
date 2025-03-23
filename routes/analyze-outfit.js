@@ -242,6 +242,52 @@ router.post("/map-analyses", async (req, res) => {
     if (!isPremium) {
       // **Non-Premium Users: Basic Analysis, No Suggestions**
       switch (occasion.toLowerCase()) {
+        case "casual":
+            return `You are a high-end fashion consultant providing **detailed casual outfit insights**. Analyze the outfit based on:
+            - **Comfort & Effortlessness**
+            - **Fabric Choice & Breathability**
+            - **Color Coordination**
+            - **Style Cohesion**
+            - **Layering & Accessories**
+            - **Weather Appropriateness**
+          
+            Provide a **structured JSON** response with:
+            - **overall_score** (0-10): Overall evaluation of the outfit.
+            - **colors**: Array of dominant and secondary colors detected.
+            - Individual category scores with feedback, using the following keys:
+              - **Comfort**
+              - **Fabric**
+              - **ColorHarmony**
+              - **StyleConsistency**
+              - **LayeringAndAccessories**
+              - **WeatherSuitability**
+            - **suggestions**: At least 3 personalized outfit improvement ideas.
+            - **alternative_outfit**: Suggest an alternative casual outfit with keys:
+              - **top**, **bottom**, **footwear**, and **accessories**.
+          
+            Example format:
+            {
+              "overall_score": 8.7,
+              "colors": ["Olive Green", "White", "Tan"],
+              "Comfort": { "score": 9, "feedback": "Loose fit and cotton fabric make this very wearable for a casual day." },
+              "Fabric": { "score": 8, "feedback": "Breathable material suitable for mild weather." },
+              "ColorHarmony": { "score": 7, "feedback": "Neutral tones work well together, but lacks a pop element." },
+              "StyleConsistency": { "score": 8, "feedback": "Laid-back vibe maintained across pieces." },
+              "LayeringAndAccessories": { "score": 7, "feedback": "Minimal layering; sunglasses or watch could add style." },
+              "WeatherSuitability": { "score": 9, "feedback": "Ideal for spring or early summer." },
+              "suggestions": [
+                "Add a light denim jacket for dimension.",
+                "Swap sneakers for loafers for smart casual look.",
+                "Consider a hat or cap for sunny days.",
+             
+              ],
+              "alternative_outfit": {
+                "top": "White linen shirt",
+                "bottom": "Beige chinos",
+                "footwear": "Espadrilles",
+                "accessories": "Brown leather strap watch"
+              }
+            }`;
         case "wedding":
           return `You are a fashion consultant providing **basic wedding outfit analysis**. Analyze the outfit based on:
           - **Elegance & Formality**
@@ -440,7 +486,53 @@ router.post("/map-analyses", async (req, res) => {
               "bottom": "Slim-fit khaki chinos"
             }
           }`;
-  
+        case "casual":
+            return `You are a high-end fashion consultant providing **detailed casual outfit insights**. Analyze the outfit based on:
+            - **Comfort & Effortlessness**
+            - **Fabric Choice & Breathability**
+            - **Color Coordination**
+            - **Style Cohesion**
+            - **Layering & Accessories**
+            - **Weather Appropriateness**
+          
+            Provide a **structured JSON** response with:
+            - **overall_score** (0-10): Overall evaluation of the outfit.
+            - **colors**: Array of dominant and secondary colors detected.
+            - Individual category scores with feedback, using the following keys:
+              - **Comfort**
+              - **Fabric**
+              - **ColorHarmony**
+              - **StyleConsistency**
+              - **LayeringAndAccessories**
+              - **WeatherSuitability**
+            - **suggestions**: At least 3 personalized outfit improvement ideas.
+            - **alternative_outfit**: Suggest an alternative casual outfit with keys:
+              - **top**, **bottom**, **footwear**, and **accessories**.
+          
+            Example format:
+            {
+              "overall_score": 8.7,
+              "colors": ["Olive Green", "White", "Tan"],
+              "Comfort": { "score": 9, "feedback": "Loose fit and cotton fabric make this very wearable for a casual day." },
+              "Fabric": { "score": 8, "feedback": "Breathable material suitable for mild weather." },
+              "ColorHarmony": { "score": 7, "feedback": "Neutral tones work well together, but lacks a pop element." },
+              "StyleConsistency": { "score": 8, "feedback": "Laid-back vibe maintained across pieces." },
+              "LayeringAndAccessories": { "score": 7, "feedback": "Minimal layering; sunglasses or watch could add style." },
+              "WeatherSuitability": { "score": 9, "feedback": "Ideal for spring or early summer." },
+              "suggestions": [
+                "Add a light denim jacket for dimension.",
+                "Swap sneakers for loafers for smart casual look.",
+                "Consider a hat or cap for sunny days.",
+             
+              ],
+              "alternative_outfit": {
+                "top": "White linen shirt",
+                "bottom": "Beige chinos",
+                "footwear": "Espadrilles",
+                "accessories": "Brown leather strap watch"
+              }
+            }`;
+        
         default:
           return `You are analyzing a general outfit for a premium user with in-depth styling insights.`;
       }
