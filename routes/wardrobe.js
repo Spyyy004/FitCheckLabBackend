@@ -242,7 +242,7 @@ for (const item of items) {
     const imageGen = await openai.images.generate({
       model: "dall-e-2",
       prompt: textPrompt,
-      size: '256x256',
+      size: '512x512',
       n: 1,
     });
 
