@@ -188,11 +188,33 @@ router.post("/", upload.single("image"), async (req, res) => {
       imageUrl,
     });
     console.log(savedAnalysis,'outdit analyssiss',savedAnalysis)
+
+    const outfit_id = savedAnalysis[0].id;
+
+const { data: sharedData, error: sharedError } = await supabase
+  .from("shared_outfits")
+  .insert([
+    {
+      outfit_id,
+      user_id,
+      image_url: imageUrl,
+      analysis_json: analysisResult,
+      is_private: false,
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+  ])
+  .select("id")
+  .single();
+
+if (sharedError) {
+  console.error("⚠️ Failed to create shareable link:", sharedError);
+}
     // **8️⃣ Return Final Response**
     return res.json({
       imageUrl,
       outfit_id:savedAnalysis,
       ...analysisResult,
+      link_id:sharedData,
       isPremium,
       session_token: user_id ? null : newSessionToken, // ✅ Return session_token for guests only
     });
