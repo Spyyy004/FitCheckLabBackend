@@ -112,6 +112,109 @@ router.post("/add/single", authenticateUser, upload.array("image"), async (req, 
   }
 });
 
+router.post("/add/myntra", authenticateUser, upload.array("image"), async (req, res) => {
+  try {
+    const { category, subCategory, material, brand, fit } = req.body || {};
+    const supabaseUrl = process.env.SUPABASE_URL;
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No images uploaded." });
+    }
+
+    const insertedItems = [];
+
+    for (const file of req.files) {
+      const filePath = `wardrobe_${Date.now()}_${file.originalname}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("wardrobe")
+        .upload(filePath, file.buffer, { contentType: file.mimetype });
+
+      if (uploadError) {
+        console.error("❌ Supabase Upload Error:", uploadError);
+        return res.status(500).json({ error: "Error uploading image to Supabase." });
+      }
+
+      const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
+      const userId = req?.user?.id ?? "";
+      const analysisItems = await analyzeAndGenerateClothingItemsForMyntra({ imageUrl, userId });
+
+      for (const item of analysisItems) {
+        let finalImageUrl = imageUrl; // fallback image
+      
+        try {
+          if (item.generated_image_url) {
+            const response = await fetch(item.generated_image_url);
+            const buffer = await response.arrayBuffer();
+      
+            const imagePath = `wardrobe/generated_${Date.now()}_${Math.random()}.png`;
+      
+            const { data: uploaded, error: uploadError } = await supabase.storage
+              .from("wardrobe")
+              .upload(imagePath, Buffer.from(buffer), {
+                contentType: "image/png",
+              });
+      
+            if (uploadError) {
+              console.warn("⚠️ Supabase Upload Failed. Using fallback image.", uploadError);
+            } else {
+              finalImageUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/wardrobe/${uploaded.path}`;
+            }
+          }
+        } catch (err) {
+          console.warn("⚠️ Failed to fetch/upload generated image:", err);
+        }
+      
+        const { data: clothingItem, error: dbError } = await supabase
+          .from("clothing_items")
+          .insert([
+            {
+              user_id: req?.user?.id,
+              category: category || item["Category"],
+              sub_category: subCategory || item["Subcategory"],
+              material: material || item["Material"],
+              brand: brand || null,
+              fit_type: fit || item["Fit"],
+              image_url: finalImageUrl,
+              name: item.suggested_name || `${item["Primary Color"] || ""} ${item["Subcategory"]}`,
+              colors: item["Colors"],
+              primary_color: item["Primary Color"],
+              pattern: item["Pattern"],
+              seasons: item["Seasons"],
+              occasions: item["Occasions"],
+              style_tags: item["Style Tags"],
+              analysis_json: item,
+            },
+          ])
+          .select();
+      
+        if (dbError) {
+          console.error("❌ Database Insert Error:", dbError);
+          return res.status(500).json({ error: "Error saving clothing item to database." });
+        }
+      
+        insertedItems.push(clothingItem[0]);
+      }
+      
+      trackEvent(req?.user?.id, "Wardrobe", {
+        items: analysisItems?.length,
+        type: "add-item",
+      });
+    }
+
+    return res.status(201).json({
+      message: "Clothing items added successfully",
+      items: insertedItems,
+    });
+  } catch (error) {
+    console.error("❌ Server Error:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "add-cloth-wardrobe"
+    })
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 router.post("/add/multiple", authenticateUser, upload.array("image"), async (req, res) => {
   try {
@@ -358,6 +461,137 @@ if (userId && items?.length > 0) {
   return generatedItems;
 }
 
+export async function analyzeAndGenerateClothingItemsForMyntra({ imageUrl, userId }) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const prompt = `You are an advanced fashion AI trained to analyze e-commerce screenshots from Myntra and extract structured metadata for each clothing item displayed. Your task is to identify all individual clothing and accessory items shown in the screenshot and return their metadata in structured JSON format.
+
+Context:
+- These screenshots may include one or more products with product cards, backgrounds, brand names, and prices.
+- Focus only on the main visible clothing items (ignore price, brand text, or overlays).
+- If multiple items are shown, extract metadata for each individually based on visible details.
+
+Extraction Guidelines:
+For each detected item, classify it based on the following attributes:
+1. Category: The general type of clothing (e.g., "Tops", "Bottoms", "Footwear", "Accessories").
+2. Subcategory: A more specific type (e.g., "Sweatshirt", "Joggers", "Sneakers", "Hat", "Bag").
+3. Material: The primary fabric or material used (e.g., "Cotton blend", "Denim", "Synthetic", "Leather").
+4. Fit: How the item fits on the body (e.g., "Relaxed", "Slim", "Oversized", "Regular").
+5. Colors: A list of all detected colors in the item (e.g., ["Black", "White", "Red"]).
+6. Primary Color: The dominant color of the item (e.g., "Navy Blue").
+7. Pattern: Any notable patterns (e.g., "Solid", "Striped", "Graphic Print", "Logo-based").
+8. Seasons: All the seasons to wear the item. If it is a special item like Sherwani, Wedding Suit, Bikini, Swim Suit, then return all seasons.
+9. Occasions: The types of events this item is suitable for. Occasions can be more than one but all of them must be one of these: ["Casual", "Office", "Wedding", "Party", "Date", "Workout", "Formal"].
+10. Style Tags: Keywords that best describe the item's fashion style (e.g., ["Minimalist", "Sporty", "Trendy", "Vintage"]).
+11. Image URL: Generate a cropped or focused image (AI-generated if needed) representing only the specific item, excluding overlays and distractions.
+
+✅ Output Format:
+Return your response in the following valid JSON structure only (no commentary):
+{
+  "items": [
+    {
+      "Category": "Tops",
+      "Subcategory": "Sweatshirt",
+      "Material": "Cotton blend",
+      "Fit": "Relaxed",
+      "Colors": ["Navy Blue"],
+      "Primary Color": "Navy Blue",
+      "Pattern": "Solid",
+      "Seasons": ["Fall", "Winter"],
+      "Occasions": ["Casual"],
+      "Style Tags": ["Minimalist", "Cozy"],
+      "Image URL": "URL_of_Sweatshirt_Image"
+    }
+  ]
+}`;
+
+
+  const analysisResponse = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: prompt },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "Analyze the clothing items in the provided image and return output in JSON only." },
+          { type: "image_url", image_url: { url: imageUrl } },
+        ],
+      },
+    ],
+  });
+
+  let rawResponse = analysisResponse.choices[0].message.content.trim();
+  if (rawResponse.startsWith("```json")) rawResponse = rawResponse.replace("```json", "").trim();
+  if (rawResponse.endsWith("```")) rawResponse = rawResponse.replace("```", "").trim();
+
+  let items;
+  try {
+    const parsed = JSON.parse(rawResponse);
+    if (!parsed.items || !Array.isArray(parsed.items)) {
+      console.error("❌ AI response does not contain an 'items' array.", parsed);
+      return [];
+    }
+    items = parsed.items;
+  } catch (err) {
+    console.error("❌ Failed to parse AI response:", err);
+    console.error("🔎 Raw Response:", rawResponse);
+    return [];
+  }
+
+  const generatedItems = [];
+  
+for (const item of items) {
+  try {
+    const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}. Image must have a realistic tone and lighting.`;
+
+    const imageGen = await openai.images.generate({
+      model: "dall-e-2",
+      prompt: textPrompt,
+      size: '512x512',
+      n: 1,
+    });
+
+    const generatedUrl = imageGen?.data?.[0]?.url;
+
+    // ✅ Push item with generated image
+    generatedItems.push({
+      ...item,
+      generated_image_url: generatedUrl,
+    });
+
+    // ✅ Increment count in the profiles table (if user is logged in)
+   
+
+  } catch (genErr) {
+    console.warn("⚠️ Failed to generate image for item:", item, genErr);
+  }
+}
+
+if (userId && items?.length > 0) {
+  const { data: profile, error: fetchError } = await supabase
+    .from("profiles")
+    .select("cloth_to_metadata_count")
+    .eq("id", userId)
+    .single();
+
+  if (fetchError) {
+    console.error("❌ Failed to fetch current cloth_to_metadata_count:", fetchError);
+  } else {
+    const newCount = (profile?.cloth_to_metadata_count || 0) + items.length;
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ cloth_to_metadata_count: newCount })
+      .eq("id", userId);
+
+    if (updateError) {
+      console.error("❌ Failed to update cloth_to_metadata_count:", updateError);
+    }
+  }
+}
+
+
+  return generatedItems;
+}
 
 router.post("/add-from-catalog",authenticateUser, async (req, res) => {
   const userId = req?.user?.id;

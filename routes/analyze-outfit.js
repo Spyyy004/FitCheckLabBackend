@@ -187,7 +187,6 @@ router.post("/", upload.single("image"), async (req, res) => {
       isPremium,
       imageUrl,
     });
-    console.log(savedAnalysis,'outdit analyssiss',savedAnalysis)
 
     const outfit_id = savedAnalysis[0].id;
 
