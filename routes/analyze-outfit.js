@@ -187,11 +187,11 @@ router.post("/", upload.single("image"), async (req, res) => {
       isPremium,
       imageUrl,
     });
-    console.log(savedAnalysis?.id,'outdit analyssiss')
+    console.log(savedAnalysis,'outdit analyssiss',savedAnalysis)
     // **8️⃣ Return Final Response**
     return res.json({
       imageUrl,
-      outfit_id:savedAnalysis?.id,
+      outfit_id:savedAnalysis,
       ...analysisResult,
       isPremium,
       session_token: user_id ? null : newSessionToken, // ✅ Return session_token for guests only
