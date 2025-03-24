@@ -12,10 +12,11 @@ import profileRoutes from "./routes/profiles.js";
 import onboardingRoutes from './routes/onboarding.js';
 import healthRoutes from './routes/health.js';
 import wardrobeRoutes from './routes/wardrobe.js';
+import sharedOutfits from './routes/shared-outfits.js';
 import editProfileRoutes from './routes/edit-profile.js';
 import singleClothingItem from './routes/single-clothing-item.js'
 import paymentsWebhook from './routes/payments.js'; 
-import sharedOutfits from './routes/shared-outfits.js';
+
 dotenv.config();
 const app = express();
 
@@ -45,7 +46,7 @@ app.use("/api/wardrobe",wardrobeRoutes);
 app.use("/api/update-profile",editProfileRoutes)
 app.use("/api/wardrobe/item",singleClothingItem)
 app.use("/api/payments",paymentsWebhook)
-app.use("/api/shared-outfits",)
+app.use("/api/shared-outfits",sharedOutfits)
 // Start Server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
