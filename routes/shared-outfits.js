@@ -1,11 +1,12 @@
 import express from "express";
 import { supabase } from "../lib/supabaseClient"; // Update path if needed
 import { v4 as uuidv4 } from "uuid"; // If you want to manually generate UUIDs
+import { authenticateUser } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
 
-router.post("/shared-outfits", async (req, res) => {
+router.post("/shared-outfits", authenticateUser,async (req, res) => {
     const { outfit_id, analysis_json, image_url, is_private } = req.body;
     const user_id = req.user?.id || null;
   
@@ -66,7 +67,7 @@ router.post("/shared-outfits", async (req, res) => {
   });
 
   
-  router.delete("/shared-outfits/:id", async (req, res) => {
+  router.delete("/shared-outfits/:id", authenticateUser,async (req, res) => {
     const { id } = req.params;
   
     const { error } = await supabase
