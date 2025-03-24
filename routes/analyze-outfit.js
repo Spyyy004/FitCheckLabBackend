@@ -187,6 +187,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       isPremium,
       imageUrl,
     });
+    console.log(savedAnalysis?.id,'outdit analyssiss')
     // **8️⃣ Return Final Response**
     return res.json({
       imageUrl,
