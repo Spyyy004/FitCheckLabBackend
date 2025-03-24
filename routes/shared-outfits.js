@@ -6,7 +6,7 @@ import { authenticateUser } from "../middleware/authMiddleware";
 const router = express.Router();
 
 
-router.post("/shared-outfits", authenticateUser,async (req, res) => {
+router.post("/", authenticateUser,async (req, res) => {
     const { outfit_id, analysis_json, image_url, is_private } = req.body;
     const user_id = req.user?.id || null;
   
@@ -38,7 +38,7 @@ router.post("/shared-outfits", authenticateUser,async (req, res) => {
   });
 
   
-  router.get("/shared-outfits/:id", async (req, res) => {
+  router.get("/:id", async (req, res) => {
     const { id } = req.params;
   
     const { data, error } = await supabase
@@ -67,7 +67,7 @@ router.post("/shared-outfits", authenticateUser,async (req, res) => {
   });
 
   
-  router.delete("/shared-outfits/:id", authenticateUser,async (req, res) => {
+  router.delete("/:id", authenticateUser,async (req, res) => {
     const { id } = req.params;
   
     const { error } = await supabase
