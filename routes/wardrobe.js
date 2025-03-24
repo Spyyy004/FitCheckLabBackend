@@ -9,7 +9,7 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 
-router.post("/add", authenticateUser, upload.array("image"), async (req, res) => {
+router.post("/add/single", authenticateUser, upload.array("image"), async (req, res) => {
   try {
     const { category, subCategory, material, brand, fit } = req.body || {};
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -34,38 +34,6 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
       const userId = req?.user?.id ?? "";
       const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId });
-
-      // for (const item of analysisItems) {
-      //   const { data: clothingItem, error: dbError } = await supabase
-      //     .from("clothing_items")
-      //     .insert([
-      //       {
-      //         user_id: req?.user?.id,
-      //         category: category || item["Category"],
-      //         sub_category: subCategory || item["Subcategory"],
-      //         material: material || item["Material"],
-      //         brand: brand || null,
-      //         fit_type: fit || item["Fit"],
-      //         image_url: item.generated_image_url || imageUrl,
-      //         name: item.suggested_name || `${item["Primary Color"] || ""} ${item["Subcategory"]}`,
-      //         colors: item["Colors"],
-      //         primary_color: item["Primary Color"],
-      //         pattern: item["Pattern"],
-      //         seasons: item["Seasons"],
-      //         occasions: item["Occasions"],
-      //         style_tags: item["Style Tags"],
-      //         analysis_json: item,
-      //       },
-      //     ])
-      //     .select();
-
-      //   if (dbError) {
-      //     console.error("❌ Database Insert Error:", dbError);
-      //     return res.status(500).json({ error: "Error saving clothing item to database." });
-      //   }
-
-      //   insertedItems.push(clothingItem[0]);
-      // }
 
       for (const item of analysisItems) {
         let finalImageUrl = imageUrl; // fallback image
@@ -145,7 +113,108 @@ router.post("/add", authenticateUser, upload.array("image"), async (req, res) =>
 });
 
 
+router.post("/add/multiple", authenticateUser, upload.array("image"), async (req, res) => {
+  try {
+    const { category, subCategory, material, brand, fit } = req.body || {};
+    const supabaseUrl = process.env.SUPABASE_URL;
 
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No images uploaded." });
+    }
+
+    const insertedItems = [];
+
+    for (const file of req.files) {
+      const filePath = `wardrobe_${Date.now()}_${file.originalname}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("wardrobe")
+        .upload(filePath, file.buffer, { contentType: file.mimetype });
+
+      if (uploadError) {
+        console.error("❌ Supabase Upload Error:", uploadError);
+        return res.status(500).json({ error: "Error uploading image to Supabase." });
+      }
+
+      const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
+      const userId = req?.user?.id ?? "";
+      const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId });
+
+      for (const item of analysisItems) {
+        let finalImageUrl = imageUrl; // fallback image
+      
+        try {
+          if (item.generated_image_url) {
+            const response = await fetch(item.generated_image_url);
+            const buffer = await response.arrayBuffer();
+      
+            const imagePath = `wardrobe/generated_${Date.now()}_${Math.random()}.png`;
+      
+            const { data: uploaded, error: uploadError } = await supabase.storage
+              .from("wardrobe")
+              .upload(imagePath, Buffer.from(buffer), {
+                contentType: "image/png",
+              });
+      
+            if (uploadError) {
+              console.warn("⚠️ Supabase Upload Failed. Using fallback image.", uploadError);
+            } else {
+              finalImageUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/wardrobe/${uploaded.path}`;
+            }
+          }
+        } catch (err) {
+          console.warn("⚠️ Failed to fetch/upload generated image:", err);
+        }
+      
+        const { data: clothingItem, error: dbError } = await supabase
+          .from("clothing_items")
+          .insert([
+            {
+              user_id: req?.user?.id,
+              category: category || item["Category"],
+              sub_category: subCategory || item["Subcategory"],
+              material: material || item["Material"],
+              brand: brand || null,
+              fit_type: fit || item["Fit"],
+              image_url: finalImageUrl,
+              name: item.suggested_name || `${item["Primary Color"] || ""} ${item["Subcategory"]}`,
+              colors: item["Colors"],
+              primary_color: item["Primary Color"],
+              pattern: item["Pattern"],
+              seasons: item["Seasons"],
+              occasions: item["Occasions"],
+              style_tags: item["Style Tags"],
+              analysis_json: item,
+            },
+          ])
+          .select();
+      
+        if (dbError) {
+          console.error("❌ Database Insert Error:", dbError);
+          return res.status(500).json({ error: "Error saving clothing item to database." });
+        }
+      
+        insertedItems.push(clothingItem[0]);
+      }
+      
+      trackEvent(req?.user?.id, "Wardrobe", {
+        items: analysisItems?.length,
+        type: "add-item",
+      });
+    }
+
+    return res.status(201).json({
+      message: "Clothing items added successfully",
+      items: insertedItems,
+    });
+  } catch (error) {
+    console.error("❌ Server Error:", error);
+    trackEvent("","API Failure",{
+      error : error?.message ?? "Error Message",
+      type: "add-cloth-wardrobe"
+    })
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 // 🔹 Helper to download image from URL to buffer
 const downloadImageToBuffer = async (url) => {
