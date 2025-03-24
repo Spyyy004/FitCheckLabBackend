@@ -1,7 +1,7 @@
 import express from "express";
 import { supabase } from "../config/supabaseClient.js"; // Update path if needed
 import { v4 as uuidv4 } from "uuid"; // If you want to manually generate UUIDs
-import { authenticateUser } from "../middleware/authMiddleware";
+import { authenticateUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
