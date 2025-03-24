@@ -1,7 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from './config/supabaseClient.js'
 import cron from 'node-cron'
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 
 const cleanupUnlinkedOutfits = async () => {
     const now = new Date()
