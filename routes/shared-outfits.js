@@ -1,5 +1,5 @@
 import express from "express";
-import { supabase } from "../lib/supabaseClient"; // Update path if needed
+import { supabase } from "../config/supabaseClient.js"; // Update path if needed
 import { v4 as uuidv4 } from "uuid"; // If you want to manually generate UUIDs
 import { authenticateUser } from "../middleware/authMiddleware";
 
