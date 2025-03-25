@@ -162,6 +162,7 @@ router.post("/", upload.single("image"), async (req, res) => {
 
     // **7️⃣ Store Analysis in Supabase**
     const newSessionToken = session_token || uuidv4(); // Generate new session token for guests
+ 
 
     const { data: savedAnalysis, error: dbError } = await supabase
       .from("outfit_analyses")
@@ -205,8 +206,8 @@ const { data: sharedData, error: sharedError } = await supabase
   ])
   .select("id")
   .single();
-  // const outfitItems = analysisResult?.items || [];
-  // const affiliateRecommendations = await recommendAffiliatesFromOutfit(outfitItems, user?.gender || 'unisex');
+  const outfitItems = analysisResult?.items || [];
+  const affiliateRecommendations = await recommendAffiliatesFromOutfit(outfitItems, analysisResult?.gender || 'unisex');
 if (sharedError) {
   console.error("⚠️ Failed to create shareable link:", sharedError);
 }
@@ -215,6 +216,7 @@ if (sharedError) {
       imageUrl,
       outfit_id:savedAnalysis,
       ...analysisResult,
+      affiliateRecommendations,
       link_id:sharedData,
       isPremium,
  
@@ -225,8 +227,8 @@ if (sharedError) {
     trackEvent("", "API Failure", {
       error: error?.message ?? "Error Message",
       type: "signup",
-      imageUrl,
-      affiliateRecommendations
+      // imageUrl,
+      // affiliateRecommendations
     });
 
     return res.status(500).json({ error: "Internal Server Error" });
@@ -408,6 +410,7 @@ const getPromptForOccasion = (occasion, isPremium) => {
           - **5+ personalized outfit refinements.**
           - **A key named "alternative_outfit"** suggesting an alternative composition.
           - **Clothing items found in the image**
+          - **Gender of the person in image**
           Example format:
           {
             "overall_score": 9.4,
@@ -421,7 +424,8 @@ const getPromptForOccasion = (occasion, isPremium) => {
               "top": "Beige double-breasted blazer",
               "bottom": "Tailored charcoal gray dress pants"
             },
-            "items":["T Shirt", "Jeans"]
+            "items":["T Shirt", "Jeans"],
+            "gender":"male"
           }`;
 
       case "party":
@@ -438,6 +442,7 @@ const getPromptForOccasion = (occasion, isPremium) => {
               - **3+ targeted styling improvements.**
               - **An alternative outfit using wardrobe items.**
               - **Clothing items found in the image**
+              - **Gender of the person in image**
               Example format:
               {
                 "overall_score": 8.9,
@@ -451,7 +456,8 @@ const getPromptForOccasion = (occasion, isPremium) => {
                   "top": "Black fitted shirt",
                   "bottom": "Slim-fit red pants"
                 },
-                items:["T Shirt", "Jeans"]
+                items:["T Shirt", "Jeans"],
+                "gender":"male"
               }`;
 
       case "office":
@@ -470,6 +476,7 @@ Provide a **structured JSON** response with:
 - **5+ styling tips to enhance workplace readiness.**
 - **An alternative work-friendly outfit suggestion.**
 - **Clothing items found in the image**
+- **Gender of the person in image**
 
 Example format:
 {
@@ -484,7 +491,8 @@ Example format:
     "top": "Olive green polo",
     "bottom": "Beige chinos"
   },
-  "items":["T Shirt", "Chinos"]
+  "items":["T Shirt", "Chinos"],
+  "gender":"male"
 }`;
 
       case "date":
@@ -503,6 +511,7 @@ Provide a **structured JSON** response with:
 - **5+ personalized styling tips.**
 - **An alternative outfit for date confidence.**
 - **Clothing items found in the image**
+- **Gender of the person in image**
 
 Example format:
 {
@@ -517,7 +526,8 @@ Example format:
     "top": "Fitted navy polo",
     "bottom": "Slim-fit khaki chinos"
   },
-  "items": ["T Shirt", "Jeans"]
+  "items": ["T Shirt", "Jeans"],
+  "gender":"male"
 }`;
 
       case "casual":
@@ -544,7 +554,7 @@ Example format:
           - **suggestions**: At least 3 styling improvements.
           - **alternative_outfit**: Suggest a new casual look with:
             - **top**, **bottom**, **footwear**, and **accessories**
-          
+          - **Gender of the person in image**
           Example:
           {
             "overall_score": 8.7,
@@ -566,7 +576,8 @@ Example format:
               "footwear": "Espadrilles",
               "accessories": "Brown leather strap watch"
             },
-            "items": ["T Shirt", "Jeans"]
+            "items": ["T Shirt", "Jeans"],
+            "gender":"male"
           }`;
 
       default:
@@ -576,37 +587,171 @@ Example format:
 };
 
 
-const recommendAffiliatesFromOutfit = async (items) => {
-  const complements = {
-    Chinos: ['Shirt', 'Loafers','Polo Shirt'],
-    Jeans: ['T-Shirt', 'Sneakers'],
-    Shirt: ['Trousers', 'Formal Shoes', 'Chinos'],
-    Hoodie: ['Sneakers'],
-    "T-Shirt": ['Shorts', 'Sneakers'],
+const recommendAffiliatesFromOutfit = async (items, gender="unisex") => {
+   const complementMap = {
+    // 👕 Tops
+    "t shirt": ["Jeans", "Shorts", "Sneakers", "Jacket"],
+    "shirt": ["Chinos", "Dress Pants", "Loafers", "Blazer"],
+    "blouse": ["Skirt", "Trousers", "Heels", "Cardigan"],
+    "sweater": ["Jeans", "Leggings", "Boots", "Coat"],
+    "hoodie": ["Sweatpants", "Track Pants", "Sneakers", "Beanie"],
+    "tank top": ["Shorts", "Skirt", "Sandals"],
+    "turtleneck": ["Dress Pants", "Coat", "Boots"],
+    "cardigan": ["Dress", "Leggings", "Flats"],
+    "crop top": ["High-Waist Jeans", "Skirt", "Sneakers"],
+    "jacket": ["T-Shirt", "Jeans", "Boots"],
+    "coat": ["Turtleneck", "Dress Pants", "Formal Shoes"],
+    "blazer": ["Shirt", "Chinos", "Loafers"],
+    "denim jacket": ["T-Shirt", "Jeans", "Sneakers"],
+    "bomber jacket": ["T-Shirt", "Cargo Pants", "Sneakers"],
+    "windbreaker": ["Athletic Shirt", "Track Pants", "Athletic Shoes"],
+    "leather jacket": ["T-Shirt", "Jeans", "Boots"],
+    "parka": ["Sweater", "Jeans", "Boots"],
+    "trench coat": ["Turtleneck", "Formal Shoes", "Dress Pants"],
+    "puffer jacket": ["Hoodie", "Track Pants", "Sneakers"],
+  
+    // 👖 Bottoms
+    "jeans": ["T-Shirt", "Sweater", "Sneakers", "Jacket"],
+    "chinos": ["Shirt", "Loafers", "Blazer"],
+    "dress pants": ["Shirt", "Formal Shoes", "Blazer"],
+    "trousers": ["Shirt", "Formal Shoes", "Blazer"],
+    "shorts": ["Tank Top", "T-Shirt", "Sandals"],
+    "skirt": ["Blouse", "Heels", "Cardigan"],
+    "leggings": ["Sweater", "Tunic", "Sneakers"],
+    "track pants": ["Athletic Shirt", "Hoodie", "Athletic Shoes"],
+    " argo pants": ["T-Shirt", "Bomber Jacket", "Boots"],
+    "sweatpants": ["Hoodie", "Tank Top", "Sneakers"],
+  
+    // 👗 Dresses
+    "casual dress": ["Cardigan", "Flats", "Crossbody Bag"],
+    "formal dress": ["Heels", "Clutch", "Jewelry"],
+    "cocktail dress": ["Heels", "Blazer", "Watch"],
+    "sundress": ["Sandals", "Sun Hat", "Tote Bag"],
+    "maxi dress": ["Wedges", "Denim Jacket", "Crossbody Bag"],
+    "mini dress": ["Heels", "Leather Jacket"],
+    "evening gown": ["Heels", "Jewelry", "Clutch"],
+    "wrap dress": ["Loafers", "Watch"],
+  
+    // 👟 Footwear
+    "sneakers": ["Jeans", "T-Shirt", "Bomber Jacket"],
+    "dress shoes": ["Suit", "Dress Shirt", "Tuxedo"],
+    "boots": ["Jeans", "Sweater", "Leather Jacket"],
+    "sandals": ["Shorts", "Sundress", "Tank Top"],
+    "loafers": ["Chinos", "Shirt", "Blazer"],
+    "heels": ["Dress", "Skirt", "Blouse"],
+    "flats": ["Casual Dress", "Cardigan"],
+    "athletic shoes": ["Workout Shorts", "Track Pants", "Hoodie"],
+    "slippers": ["Pajamas", "Robe"],
+    "oxford shoes": ["Suit", "Dress Pants"],
+  
+    // 🎽 Activewear
+    "athletic shirt": ["Workout Shorts", "Track Pants", "Sneakers"],
+    "sports bra": ["Yoga Pants", "Athletic Jacket"],
+    "workout shorts": ["Athletic Shirt", "Sneakers"],
+    "yoga pants": ["Tank Top", "Sneakers"],
+    "athletic jacket": ["Track Pants", "Athletic Shoes"],
+    "compression wear": ["Track Suit"],
+    "dwimwear": ["Sunglasses", "Flip-Flops"],
+    "track suit": ["Athletic Shoes", "Cap"],
+  
+    // 😴 Sleepwear
+    "pajamas": ["Slippers", "Robe"],
+    "robe": ["Sleep Shirt"],
+    "nightgown": ["Slippers"],
+    "loungewear": ["Slippers", "Cardigan"],
+  
+    // 👔 Formalwear
+    "suit": ["Dress Shirt", "Tie", "Formal Shoes"],
+    "tuxedo": ["Bow Tie", "Dress Shirt", "Formal Shoes"],
+    "dress shirt": ["Blazer", "Chinos", "Formal Shoes"],
+    "vest": ["Suit", "Trousers"],
+    "bow tie": ["Tuxedo"],
+    "formal shoes": ["Suit", "Dress Pants"],
+    "gown": ["Heels", "Jewelry"],
+  
+    // 🎒 Accessories / Bags / Headwear
+    "belt": ["Chinos", "Shirt"],
+    "tie": ["Dress Shirt", "Suit"],
+    "scarf": ["Coat", "Sweater"],
+    "gloves": ["Coat", "Parka"],
+    "sunglasses": ["T-Shirt", "Swimwear"],
+    "jewelry": ["Dress", "Blouse"],
+    "watch": ["Shirt", "Blazer"],
+    "cufflinks": ["Tuxedo"],
+    "pocket square": ["Suit"],
+    "hair accessories": ["Blouse", "Dress"],
+    "backpack": ["T-Shirt", "Jacket"],
+    "clutch": ["Cocktail Dress", "Gown"],
+    "tote bag": ["Sundress"],
+    "messenger bag": ["Blazer", "Chinos"],
+    "crossbody bag": ["Dress", "Cardigan"],
+    "wallet": ["Jeans"],
+    "cap": ["T-Shirt", "Bomber Jacket"],
+    "beanie": ["Hoodie", "Sweatpants"],
+    "sun hat": ["Sundress"],
+    "fedora": ["Trench Coat"],
+    "bucket hat": ["Casual Dress"],
+  
+    // 🧵 Others
+    "kurta": ["Ethnic Bottom", "Juttis"],
+    "uniform": ["Formal Shoes"],
+    "traditional wear": ["Juttis", "Sherwani"],
+    "Specialty Items": [],
   };
+
+
+
 
   const allRecommendations = [];
 
+  // 🔹 FEMALE USERS → return all female/unisex products
+  if (gender === "female") {
+    const { data, error } = await supabase
+      .from("affiliate_products")
+      .select("*")
+      .in("gender", ["female", "unisex"])
+      .limit(20); // Optional limit
+
+    if (error) {
+      console.error("❌ Error fetching female recommendations:", error.message);
+    } else {
+      allRecommendations.push(
+        ...data.map((p) => ({
+          ...p,
+          reason: "Recommended for your style",
+          source_item: null,
+        }))
+      );
+    }
+
+    return allRecommendations;
+  }
+ 
+
+  // 🔹 MALE / UNISEX USERS → go through matching logic
   for (const item of items) {
-    const sourceSub = item.Subcategory;
-    const matchSubs = complements[sourceSub] || [];
+    const sourceSub = item;
+  
+    const matchSubs = complementMap[sourceSub] || [];
 
-    
-      const { data, error } = await supabase
-        .from("affiliate_products")
-        .select("*")
-        .limit(5)// fetch top 3 for each combo
+    if (matchSubs.length === 0) continue;
 
-      if (!error && data?.length > 0) {
-        allRecommendations.push(
-          ...data.map((p) => ({
-            ...p,
-            reason: `Pairs well with ${sourceSub}`,
-            source_item: sourceSub,
-          }))
-        );
-      }
-    
+    const { data, error } = await supabase
+      .from("affiliate_products")
+      .select("*")
+      .in("subcategory", matchSubs)
+      .in("gender", ["male", "unisex"])
+      .limit(4); // Fetch top 5 per matching subcategory group
+
+    if (!error && data?.length > 0) {
+      allRecommendations.push(
+        ...data.map((p) => ({
+          ...p,
+          reason: `Pairs well with ${sourceSub}`,
+          source_item: sourceSub,
+        }))
+      );
+    }
   }
 
   return allRecommendations;
