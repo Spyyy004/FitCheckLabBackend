@@ -205,8 +205,8 @@ const { data: sharedData, error: sharedError } = await supabase
   ])
   .select("id")
   .single();
-  const outfitItems = analysisResult?.items || [];
-  const affiliateRecommendations = await recommendAffiliatesFromOutfit(outfitItems, user?.gender || 'unisex');
+  // const outfitItems = analysisResult?.items || [];
+  // const affiliateRecommendations = await recommendAffiliatesFromOutfit(outfitItems, user?.gender || 'unisex');
 if (sharedError) {
   console.error("⚠️ Failed to create shareable link:", sharedError);
 }
@@ -217,7 +217,7 @@ if (sharedError) {
       ...analysisResult,
       link_id:sharedData,
       isPremium,
-      affiliateRecommendations,
+ 
       session_token: user_id ? null : newSessionToken, // ✅ Return session_token for guests only
     });
   } catch (error) {
