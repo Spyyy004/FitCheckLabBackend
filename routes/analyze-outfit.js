@@ -190,6 +190,7 @@ router.post("/", upload.single("image"), async (req, res) => {
 
     const outfit_id = savedAnalysis[0].id;
 
+    
 const { data: sharedData, error: sharedError } = await supabase
   .from("shared_outfits")
   .insert([
@@ -204,7 +205,8 @@ const { data: sharedData, error: sharedError } = await supabase
   ])
   .select("id")
   .single();
-
+  const outfitItems = analysisResult?.analysis?.items || [];
+  const affiliateRecommendations = await recommendAffiliatesFromOutfit(outfitItems, user?.gender || 'unisex');
 if (sharedError) {
   console.error("⚠️ Failed to create shareable link:", sharedError);
 }
@@ -218,18 +220,12 @@ if (sharedError) {
       session_token: user_id ? null : newSessionToken, // ✅ Return session_token for guests only
     });
   } catch (error) {
-    // const timestamp = new Date().toISOString();
-    // const logEntry = `[${timestamp}] ❌ Fatal Server Error: ${error.stack || error.message || error}\n`;
 
-    // // Append to logs/errors.log (create folder if needed)
-    // const logFilePath = path.join(__dirname, "../logs/errors.log");
-
-    // fs.mkdirSync(path.dirname(logFilePath), { recursive: true }); // Ensure logs directory exists
-    // fs.appendFileSync(logFilePath, logEntry);
     trackEvent("", "API Failure", {
       error: error?.message ?? "Error Message",
       type: "signup",
       imageUrl,
+      affiliateRecommendations
     });
 
     return res.status(500).json({ error: "Internal Server Error" });
@@ -569,5 +565,44 @@ Example format:
     }
   }
 };
+
+
+const recommendAffiliatesFromOutfit = async (items) => {
+  const complements = {
+    Chinos: ['Shirt', 'Loafers','Polo Shirt'],
+    Jeans: ['T-Shirt', 'Sneakers'],
+    Shirt: ['Trousers', 'Formal Shoes', 'Chinos'],
+    Hoodie: ['Sneakers'],
+    "T-Shirt": ['Shorts', 'Sneakers'],
+  };
+
+  const allRecommendations = [];
+
+  for (const item of items) {
+    const sourceSub = item.Subcategory;
+    const matchSubs = complements[sourceSub] || [];
+
+    for (const matchSub of matchSubs) {
+      const { data, error } = await supabase
+        .from("affiliate_products")
+        .select("*")
+        .ilike("subcategory", matchSub)
+        .limit(3); // fetch top 3 for each combo
+
+      if (!error && data?.length > 0) {
+        allRecommendations.push(
+          ...data.map((p) => ({
+            ...p,
+            reason: `Pairs well with ${sourceSub}`,
+            source_item: sourceSub,
+          }))
+        );
+      }
+    }
+  }
+
+  return allRecommendations;
+};
+
 
 export default router;
