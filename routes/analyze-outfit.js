@@ -217,6 +217,7 @@ if (sharedError) {
       ...analysisResult,
       link_id:sharedData,
       isPremium,
+      affiliateRecommendations,
       session_token: user_id ? null : newSessionToken, // ✅ Return session_token for guests only
     });
   } catch (error) {
