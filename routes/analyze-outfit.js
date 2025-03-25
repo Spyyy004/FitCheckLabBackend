@@ -205,7 +205,7 @@ const { data: sharedData, error: sharedError } = await supabase
   ])
   .select("id")
   .single();
-  const outfitItems = analysisResult?.analysis?.items || [];
+  const outfitItems = analysisResult?.items || [];
   const affiliateRecommendations = await recommendAffiliatesFromOutfit(outfitItems, user?.gender || 'unisex');
 if (sharedError) {
   console.error("⚠️ Failed to create shareable link:", sharedError);
@@ -407,7 +407,7 @@ const getPromptForOccasion = (occasion, isPremium) => {
           - **Colors detected in the outfit.**
           - **5+ personalized outfit refinements.**
           - **A key named "alternative_outfit"** suggesting an alternative composition.
-  
+          - **Clothing items found in the image**
           Example format:
           {
             "overall_score": 9.4,
@@ -420,7 +420,8 @@ const getPromptForOccasion = (occasion, isPremium) => {
             "alternative_outfit": {
               "top": "Beige double-breasted blazer",
               "bottom": "Tailored charcoal gray dress pants"
-            }
+            },
+            "items":["T Shirt", "Jeans"]
           }`;
 
       case "party":
@@ -436,7 +437,7 @@ const getPromptForOccasion = (occasion, isPremium) => {
               - **Colors detected in the outfit.**
               - **3+ targeted styling improvements.**
               - **An alternative outfit using wardrobe items.**
-
+              - **Clothing items found in the image**
               Example format:
               {
                 "overall_score": 8.9,
@@ -449,7 +450,8 @@ const getPromptForOccasion = (occasion, isPremium) => {
                 "alternative_outfit": {
                   "top": "Black fitted shirt",
                   "bottom": "Slim-fit red pants"
-                }
+                },
+                items:["T Shirt", "Jeans"]
               }`;
 
       case "office":
@@ -467,6 +469,7 @@ Provide a **structured JSON** response with:
 - **Colors detected in the outfit.**
 - **5+ styling tips to enhance workplace readiness.**
 - **An alternative work-friendly outfit suggestion.**
+- **Clothing items found in the image**
 
 Example format:
 {
@@ -480,7 +483,8 @@ Example format:
   "alternative_outfit": {
     "top": "Olive green polo",
     "bottom": "Beige chinos"
-  }
+  },
+  "items":["T Shirt", "Chinos"]
 }`;
 
       case "date":
@@ -498,6 +502,7 @@ Provide a **structured JSON** response with:
 - **Colors detected in the outfit.**
 - **5+ personalized styling tips.**
 - **An alternative outfit for date confidence.**
+- **Clothing items found in the image**
 
 Example format:
 {
@@ -511,7 +516,8 @@ Example format:
   "alternative_outfit": {
     "top": "Fitted navy polo",
     "bottom": "Slim-fit khaki chinos"
-  }
+  },
+  "items": ["T Shirt", "Jeans"]
 }`;
 
       case "casual":
@@ -534,6 +540,7 @@ Example format:
             - **StyleConsistency**
             - **LayeringAndAccessories**
             - **WeatherSuitability**
+            - **Clothing items found in the image**
           - **suggestions**: At least 3 styling improvements.
           - **alternative_outfit**: Suggest a new casual look with:
             - **top**, **bottom**, **footwear**, and **accessories**
@@ -558,7 +565,8 @@ Example format:
               "bottom": "Beige chinos",
               "footwear": "Espadrilles",
               "accessories": "Brown leather strap watch"
-            }
+            },
+            "items": ["T Shirt", "Jeans"]
           }`;
 
       default:
@@ -583,10 +591,11 @@ const recommendAffiliatesFromOutfit = async (items) => {
     const sourceSub = item.Subcategory;
     const matchSubs = complements[sourceSub] || [];
 
-    for (const matchSub of matchSubs) {
+    
       const { data, error } = await supabase
         .from("affiliate_products")
-        .select("*") // fetch top 3 for each combo
+        .select("*")
+        .limit(5)// fetch top 3 for each combo
 
       if (!error && data?.length > 0) {
         allRecommendations.push(
@@ -597,7 +606,7 @@ const recommendAffiliatesFromOutfit = async (items) => {
           }))
         );
       }
-    }
+    
   }
 
   return allRecommendations;
