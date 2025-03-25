@@ -586,9 +586,7 @@ const recommendAffiliatesFromOutfit = async (items) => {
     for (const matchSub of matchSubs) {
       const { data, error } = await supabase
         .from("affiliate_products")
-        .select("*")
-        .ilike("subcategory", matchSub)
-        .limit(3); // fetch top 3 for each combo
+        .select("*") // fetch top 3 for each combo
 
       if (!error && data?.length > 0) {
         allRecommendations.push(
