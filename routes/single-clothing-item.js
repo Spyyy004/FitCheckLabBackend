@@ -101,7 +101,7 @@ router.get("/:id", authenticateUser, async (req, res) => {
       console.error("❌ Clothing Item Not Found:", error?.message);
       return res.status(404).json({ error: "Clothing item not found." });
     }
-    const primaryColor = data.primary_color?.toLowerCase();
+    const primaryColor = data?.primary_color;
     const matchColors = colorPairings[primaryColor] || [];
     
     const matchSubCategories = subcategoryMatches[data?.sub_category] || [];
