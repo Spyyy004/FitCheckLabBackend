@@ -800,7 +800,7 @@ router.get("/", authenticateUser, async (req, res) => {
       pattern,
       material,
       brand,
-      fieldsToFetch: "id, user_id, name, image_url, sub_category, colors, category"
+      fieldsToFetch: "id, user_id, name, image_url, sub_category, colors, category, occasions"
     });
     
     return res.json(result);
