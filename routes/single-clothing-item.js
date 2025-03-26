@@ -46,7 +46,7 @@ router.get("/:id", authenticateUser, async (req, res) => {
       console.error("❌ Clothing Item Not Found:", error?.message);
       return res.status(404).json({ error: "Clothing item not found." });
     }
-    const primaryColor = item.primary_color?.toLowerCase();
+    const primaryColor = data.primary_color?.toLowerCase();
     const matchColors = colorPairings[primaryColor] || [];
 
     // 3️⃣ Fetch wardrobe items that match the color pairing
