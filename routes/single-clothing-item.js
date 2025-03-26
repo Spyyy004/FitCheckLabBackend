@@ -10,25 +10,28 @@ const router = express.Router();
  * Authenticated request - Only returns clothing items for the logged-in user.
  */
 
-const colorPairings = {
-  white: ["black", "blue", "olive", "beige", "grey", "brown", "denim", "pastel"],
-  black: ["white", "beige", "denim", "grey", "olive", "red", "light blue"],
-  beige: ["black", "brown", "olive", "white", "maroon", "navy"],
-  grey: ["white", "black", "blue", "olive", "maroon", "pink"],
-  navy: ["white", "beige", "grey", "mustard", "olive"],
-  brown: ["white", "tan", "olive", "blue", "grey"],
-  blue: ["white", "beige", "brown", "grey", "olive", "tan"],
-  olive: ["white", "black", "beige", "mustard", "brown"],
-  denim: ["white", "grey", "black", "tan", "olive"],
-  maroon: ["white", "beige", "black", "grey", "navy"],
-  mustard: ["navy", "olive", "brown", "white"],
-  tan: ["navy", "olive", "white", "brown", "black"],
-  red: ["white", "black", "navy", "beige"],
-  pink: ["grey", "white", "black", "navy"],
-  "pastel blue": ["white", "grey", "beige", "olive"],
-  "pastel green": ["white", "tan", "beige", "navy"],
-  lavender: ["white", "grey", "navy", "denim"],
+export const colorPairings = {
+  White: ["Black", "Blue", "Olive", "Beige", "Grey", "Brown", "Denim", "Pastel"],
+  Black: ["White", "Beige", "Denim", "Grey", "Olive", "Red", "Light Blue"],
+  Beige: ["Black", "Brown", "Olive", "White", "Maroon", "Navy"],
+  Grey: ["White", "Black", "Blue", "Olive", "Maroon", "Pink"],
+  Navy: ["White", "Beige", "Grey", "Mustard", "Olive"],
+  "Navy Blue":["White"],
+  Brown: ["White", "Tan", "Olive", "Blue", "Grey"],
+  Blue: ["White", "Beige", "Brown", "Grey", "Olive", "Tan"],
+  Olive: ["White", "Black", "Beige", "Mustard", "Brown"],
+  Denim: ["White", "Grey", "Black", "Tan", "Olive"],
+  Maroon: ["White", "Beige", "Black", "Grey", "Navy"],
+  Mustard: ["Navy", "Olive", "Brown", "White"],
+  Tan: ["Navy", "Olive", "White", "Brown", "Black"],
+  Red: ["White", "Black", "Navy", "Beige"],
+  Pink: ["Grey", "White", "Black", "Navy"],
+  "Pastel Blue": ["White", "Grey", "Beige", "Olive"],
+  "Pastel Green": ["White", "Tan", "Beige", "Navy"],
+  Lavender: ["White", "Grey", "Navy", "Denim"],
 };
+
+
 const subcategoryMatches = {
   // 🧥 Tops
   "T-Shirt": ["Jeans", "Chinos", "Shorts", "Cargo Pants", "Track Pants", "Sweatpants"],
