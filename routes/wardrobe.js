@@ -412,9 +412,9 @@ for (const item of items) {
     const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}. Image must have a realistic tone and lighting.`;
 
     const imageGen = await openai.images.generate({
-      model: "dall-e-2",
+      model: "dall-e-3",
       prompt: textPrompt,
-      size: '512x512',
+      size: '1024x1024',
       n: 1,
     });
 
@@ -544,9 +544,9 @@ for (const item of items) {
     const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}. Image must have a realistic tone and lighting.`;
 
     const imageGen = await openai.images.generate({
-      model: "dall-e-2",
+      model: "dall-e-3",
       prompt: textPrompt,
-      size: '512x512',
+      size: '1024x1024',
       n: 1,
     });
 
