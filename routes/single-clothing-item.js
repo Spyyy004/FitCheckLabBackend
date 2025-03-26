@@ -73,7 +73,7 @@ router.get("/:id", authenticateUser, async (req, res) => {
       error : error?.message ?? "Error Message",
       type: "get-single-cloth"
     })
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: `Internal Server Error ${error?.message}` });
   }
 });
 
