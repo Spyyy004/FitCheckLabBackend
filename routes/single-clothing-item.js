@@ -101,7 +101,7 @@ router.get("/:id", authenticateUser, async (req, res) => {
     const primaryColor = data.primary_color?.toLowerCase();
     const matchColors = colorPairings[primaryColor] || [];
     
-    const matchSubCategories = subcategoryMatches[subCategory] || [];
+    const matchSubCategories = subcategoryMatches[data?.sub_category] || [];
     // 3️⃣ Fetch wardrobe items that match the color pairing
     const { data: matchingItems, error: matchError } = await supabase
       .from("clothing_items")
