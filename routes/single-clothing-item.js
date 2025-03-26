@@ -11,25 +11,46 @@ const router = express.Router();
  */
 
 export const colorPairings = {
-  White: ["Black", "Blue", "Olive", "Beige", "Grey", "Brown", "Denim", "Pastel"],
-  Black: ["White", "Beige", "Denim", "Grey", "Olive", "Red", "Light Blue"],
-  Beige: ["Black", "Brown", "Olive", "White", "Maroon", "Navy"],
-  Grey: ["White", "Black", "Blue", "Olive", "Maroon", "Pink"],
-  Navy: ["White", "Beige", "Grey", "Mustard", "Olive"],
-  "Navy Blue":["White"],
-  Brown: ["White", "Tan", "Olive", "Blue", "Grey"],
-  Blue: ["White", "Beige", "Brown", "Grey", "Olive", "Tan"],
-  Olive: ["White", "Black", "Beige", "Mustard", "Brown"],
-  Denim: ["White", "Grey", "Black", "Tan", "Olive"],
-  Maroon: ["White", "Beige", "Black", "Grey", "Navy"],
-  Mustard: ["Navy", "Olive", "Brown", "White"],
-  Tan: ["Navy", "Olive", "White", "Brown", "Black"],
-  Red: ["White", "Black", "Navy", "Beige"],
-  Pink: ["Grey", "White", "Black", "Navy"],
-  "Pastel Blue": ["White", "Grey", "Beige", "Olive"],
-  "Pastel Green": ["White", "Tan", "Beige", "Navy"],
-  Lavender: ["White", "Grey", "Navy", "Denim"],
+  White: ["Black", "Blue", "Olive", "Beige", "Grey", "Brown", "Denim", "Pastel", "Red", "Lavender"],
+  Black: ["White", "Beige", "Denim", "Grey", "Olive", "Red", "Lavender", "Light Blue", "Pink"],
+  Grey: ["White", "Black", "Blue", "Olive", "Maroon", "Pink", "Pastel Green"],
+  Gray: ["White", "Black", "Blue", "Olive", "Maroon", "Pink", "Pastel Green"], // Duplicate key if both exist
+  Beige: ["Black", "Brown", "Olive", "White", "Maroon", "Navy", "Rust", "Teal"],
+  Brown: ["White", "Tan", "Olive", "Blue", "Grey", "Beige"],
+  Blue: ["White", "Beige", "Brown", "Grey", "Olive", "Tan", "Red"],
+  Navy: ["White", "Beige", "Grey", "Mustard", "Olive", "Pink"],
+  "Navy Blue": ["White", "Beige", "Grey", "Mustard", "Olive", "Pink"],
+  Olive: ["White", "Black", "Beige", "Mustard", "Brown", "Tan", "Pastel Blue"],
+  Tan: ["Navy", "Olive", "White", "Brown", "Black", "Pink"],
+  Mustard: ["Navy", "Olive", "Brown", "White", "Black"],
+  Red: ["White", "Black", "Navy", "Beige", "Tan", "Denim"],
+  Maroon: ["White", "Beige", "Black", "Grey", "Navy", "Brown"],
+  Pink: ["Grey", "White", "Black", "Navy", "Tan", "Lavender"],
+  Lavender: ["White", "Grey", "Navy", "Denim", "Pink"],
+  "Pastel Blue": ["White", "Grey", "Beige", "Olive", "Denim"],
+  "Pastel Green": ["White", "Tan", "Beige", "Navy", "Brown"],
+  Teal: ["White", "Beige", "Grey", "Denim", "Tan"],
+  Mint: ["White", "Navy", "Pastel Blue", "Grey"],
+  Orange: ["Navy", "White", "Black", "Brown"],
+  Yellow: ["Navy", "White", "Olive", "Black"],
+  Rust: ["Beige", "Olive", "White", "Denim"],
+  Denim: ["White", "Grey", "Black", "Tan", "Olive", "Pastel Blue"],
+  Gold: ["Black", "White", "Navy", "Maroon"],
+  Silver: ["Black", "White", "Grey", "Navy"],
+  "Light Blue": [
+  "White",         // crisp & clean
+  "Beige",         // soft & neutral
+  "Grey",          // classic & safe
+  "Navy",          // tonal contrast
+  "Black",         // modern edge
+  "Olive",         // earthy balance
+  "Tan",           // warm offset
+  "Pastel Pink",   // playful pastel pairing
+  "Lavender",      // soft contrast
+  "Denim"          // tone-on-tone
+]
 };
+
 
 
 const subcategoryMatches = {
