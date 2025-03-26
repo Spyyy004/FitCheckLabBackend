@@ -29,6 +29,58 @@ const colorPairings = {
   "pastel green": ["white", "tan", "beige", "navy"],
   lavender: ["white", "grey", "navy", "denim"],
 };
+const subcategoryMatches = {
+  // 🧥 Tops
+  "T-Shirt": ["Jeans", "Chinos", "Shorts", "Cargo Pants", "Track Pants", "Sweatpants"],
+  "Shirt": ["Jeans", "Chinos", "Dress Pants", "Skirt"],
+  "Blouse": ["Dress Pants", "Skirt", "Chinos"],
+  "Sweater": ["Jeans", "Leggings", "Skirt"],
+  "Hoodie": ["Jeans", "Track Pants", "Sweatpants", "Cargo Pants"],
+  "Tank Top": ["Shorts", "Skirt", "Jeans"],
+  "Turtleneck": ["Dress Pants", "Jeans", "Skirt"],
+  "Cardigan": ["Dress Pants", "Jeans", "Skirt"],
+  "Crop Top": ["High-waisted Jeans", "Skirt", "Shorts"],
+  "Jacket": ["Jeans", "Dress Pants", "Skirt"],
+  "Coat": ["Jeans", "Dress Pants"],
+  "Blazer": ["Dress Pants", "Skirt", "Jeans"],
+  "Denim Jacket": ["Chinos", "Dress Pants", "Jeans"],
+  "Bomber Jacket": ["Jeans", "Track Pants"],
+  "Windbreaker": ["Cargo Pants", "Track Pants"],
+  "Leather Jacket": ["Jeans", "Chinos"],
+  "Parka": ["Jeans", "Track Pants"],
+  "Trench Coat": ["Dress Pants", "Jeans"],
+  "Puffer Jacket": ["Jeans", "Sweatpants"],
+
+  // 👖 Bottoms
+  "Jeans": ["T-Shirt", "Shirt", "Blouse", "Sweater", "Jacket", "Hoodie", "Turtleneck"],
+  "Chinos": ["T-Shirt", "Shirt", "Blazer", "Sweater"],
+  "Dress Pants": ["Shirt", "Blouse", "Turtleneck", "Blazer"],
+  "Shorts": ["T-Shirt", "Tank Top", "Shirt", "Crop Top"],
+  "Skirt": ["Blouse", "T-Shirt", "Sweater", "Crop Top"],
+  "Leggings": ["Sweater", "Hoodie", "Crop Top"],
+  "Track Pants": ["Hoodie", "Athletic Shirt", "T-Shirt"],
+  "Cargo Pants": ["T-Shirt", "Hoodie", "Jacket"],
+  "Sweatpants": ["Hoodie", "T-Shirt", "Athletic Shirt"],
+
+  // 👗 Dresses
+  "Casual Dress": ["Sneakers", "Flats", "Sandals"],
+  "Formal Dress": ["Heels", "Dress Shoes", "Clutch"],
+  "Cocktail Dress": ["Heels", "Clutch", "Jewelry"],
+  "Sundress": ["Sandals", "Flats", "Sun Hat"],
+  "Maxi Dress": ["Flats", "Heels", "Jewelry"],
+  "Mini Dress": ["Heels", "Sneakers", "Jacket"],
+  "Evening Gown": ["Heels", "Formal Shoes", "Jewelry"],
+  "Wrap Dress": ["Heels", "Flats", "Clutch"],
+
+  // 👔 Formal
+  "Suit": ["Dress Shirt", "Formal Shoes", "Tie"],
+  "Tuxedo": ["Dress Shirt", "Bow Tie", "Formal Shoes"],
+  "Dress Shirt": ["Dress Pants", "Suit", "Chinos"],
+  "Vest": ["Dress Shirt", "Dress Pants"],
+  "Bow Tie": ["Tuxedo", "Suit"],
+  "Formal Shoes": ["Suit", "Dress Pants"],
+  "Gown": ["Heels", "Clutch", "Jewelry"],
+};
 router.get("/:id", authenticateUser, async (req, res) => {
   try {
     const { id } = req.params;
@@ -48,13 +100,15 @@ router.get("/:id", authenticateUser, async (req, res) => {
     }
     const primaryColor = data.primary_color?.toLowerCase();
     const matchColors = colorPairings[primaryColor] || [];
-
+    
+    const matchSubCategories = subcategoryMatches[subCategory] || [];
     // 3️⃣ Fetch wardrobe items that match the color pairing
     const { data: matchingItems, error: matchError } = await supabase
       .from("clothing_items")
       .select("*")
       .eq("user_id", user_id)
       .in("primary_color", matchColors)
+      .in("sub_category", matchSubCategories)
       .neq("id", id); // exclude current item
 
     if (matchError) {
