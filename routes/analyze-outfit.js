@@ -85,7 +85,6 @@ router.post("/", upload.single("image"), async (req, res) => {
               (userProfile?.ai_outfit_analysis_count || 0) + 1,
           })
           .eq("id", user_id);
-          console.log(userProfile,"******USERRR*******",user_id)
         if (updateError) {
           console.error("⚠️ Failed to increment analysis count:", updateError);
         }
