@@ -55,15 +55,15 @@ const subcategoryMatches = {
   "Puffer Jacket": ["Jeans", "Sweatpants"],
 
   // 👖 Bottoms
-  "Jeans": ["T-Shirt", "Shirt", "Blouse", "Sweater", "Jacket", "Hoodie", "Turtleneck"],
-  "Chinos": ["T-Shirt", "Shirt", "Blazer", "Sweater"],
+  "Jeans": ["T-shirt", "Shirt", "Blouse", "Sweater", "Jacket", "Hoodie", "Turtleneck"],
+  "Chinos": ["T-shirt", "Shirt", "Blazer", "Sweater"],
   "Dress Pants": ["Shirt", "Blouse", "Turtleneck", "Blazer"],
-  "Shorts": ["T-Shirt", "Tank Top", "Shirt", "Crop Top"],
-  "Skirt": ["Blouse", "T-Shirt", "Sweater", "Crop Top"],
+  "Shorts": ["T-shirt", "Tank Top", "Shirt", "Crop Top"],
+  "Skirt": ["Blouse", "T-shirt", "Sweater", "Crop Top"],
   "Leggings": ["Sweater", "Hoodie", "Crop Top"],
-  "Track Pants": ["Hoodie", "Athletic Shirt", "T-Shirt"],
-  "Cargo Pants": ["T-Shirt", "Hoodie", "Jacket"],
-  "Sweatpants": ["Hoodie", "T-Shirt", "Athletic Shirt"],
+  "Track Pants": ["Hoodie", "Athletic Shirt", "T-shirt"],
+  "Cargo Pants": ["T-shirt", "Hoodie", "Jacket"],
+  "Sweatpants": ["Hoodie", "T-shirt", "Athletic Shirt"],
 
   // 👗 Dresses
   "Casual Dress": ["Sneakers", "Flats", "Sandals"],
