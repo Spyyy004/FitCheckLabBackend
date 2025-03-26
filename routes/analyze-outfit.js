@@ -70,7 +70,7 @@ router.post("/", upload.single("image"), async (req, res) => {
     if (user_id) {
       const { data: userProfile, error: profileError } = await supabase
         .from("profiles")
-        .select("is_premium")
+        .select("is_premium, ai_outfit_analysis_count")
         .eq("id", user_id)
         .single();
 
