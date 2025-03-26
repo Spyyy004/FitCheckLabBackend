@@ -34,7 +34,7 @@ export const colorPairings = {
 
 const subcategoryMatches = {
   // 🧥 Tops
-  "T-Shirt": ["Jeans", "Chinos", "Shorts", "Cargo Pants", "Track Pants", "Sweatpants"],
+  "T-shirt": ["Jeans", "Chinos", "Shorts", "Cargo Pants", "Track Pants", "Sweatpants"],
   "Shirt": ["Jeans", "Chinos", "Dress Pants", "Skirt"],
   "Blouse": ["Dress Pants", "Skirt", "Chinos"],
   "Sweater": ["Jeans", "Leggings", "Skirt"],
