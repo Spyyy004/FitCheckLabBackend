@@ -9,6 +9,26 @@ const router = express.Router();
  * Endpoint: GET /api/clothing-items/:id
  * Authenticated request - Only returns clothing items for the logged-in user.
  */
+
+const colorPairings = {
+  white: ["black", "blue", "olive", "beige", "grey", "brown", "denim", "pastel"],
+  black: ["white", "beige", "denim", "grey", "olive", "red", "light blue"],
+  beige: ["black", "brown", "olive", "white", "maroon", "navy"],
+  grey: ["white", "black", "blue", "olive", "maroon", "pink"],
+  navy: ["white", "beige", "grey", "mustard", "olive"],
+  brown: ["white", "tan", "olive", "blue", "grey"],
+  blue: ["white", "beige", "brown", "grey", "olive", "tan"],
+  olive: ["white", "black", "beige", "mustard", "brown"],
+  denim: ["white", "grey", "black", "tan", "olive"],
+  maroon: ["white", "beige", "black", "grey", "navy"],
+  mustard: ["navy", "olive", "brown", "white"],
+  tan: ["navy", "olive", "white", "brown", "black"],
+  red: ["white", "black", "navy", "beige"],
+  pink: ["grey", "white", "black", "navy"],
+  "pastel blue": ["white", "grey", "beige", "olive"],
+  "pastel green": ["white", "tan", "beige", "navy"],
+  lavender: ["white", "grey", "navy", "denim"],
+};
 router.get("/:id", authenticateUser, async (req, res) => {
   try {
     const { id } = req.params;
@@ -26,8 +46,28 @@ router.get("/:id", authenticateUser, async (req, res) => {
       console.error("❌ Clothing Item Not Found:", error?.message);
       return res.status(404).json({ error: "Clothing item not found." });
     }
+    const primaryColor = item.primary_color?.toLowerCase();
+    const matchColors = colorPairings[primaryColor] || [];
 
-    return res.json(data);
+    // 3️⃣ Fetch wardrobe items that match the color pairing
+    const { data: matchingItems, error: matchError } = await supabase
+      .from("clothing_items")
+      .select("*")
+      .eq("user_id", user_id)
+      .in("primary_color", matchColors)
+      .neq("id", id); // exclude current item
+
+    if (matchError) {
+      console.warn("⚠️ Error fetching matching items:", matchError.message);
+    }
+
+    return res.json({
+      item,
+      color_matches: matchColors,
+      matching_items: matchingItems || [],
+    });
+
+
   } catch (error) {
     trackEvent("","API Failure",{
       error : error?.message ?? "Error Message",
