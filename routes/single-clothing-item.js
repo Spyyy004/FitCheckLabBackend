@@ -62,7 +62,7 @@ router.get("/:id", authenticateUser, async (req, res) => {
     }
 
     return res.json({
-      item,
+      data,
       color_matches: matchColors,
       matching_items: matchingItems || [],
     });
