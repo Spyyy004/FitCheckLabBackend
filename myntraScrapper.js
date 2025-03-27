@@ -31,7 +31,7 @@ async function scrapeProduct(productUrl) {
 async function scrapeWithPuppeteer(productUrl) {
   // Launch browser
   const browser = await puppeteer.launch({ 
-    headless: 'new',
+    headless: 'false',
     executablePath: '/opt/homebrew/bin/chromium',
     args: [
       '--no-sandbox', 
@@ -39,7 +39,8 @@ async function scrapeWithPuppeteer(productUrl) {
       '--disable-features=IsolateOrigins,site-per-process',
       '--disable-web-security',
       '--disable-dev-shm-usage'
-    ] 
+    ] ,
+    ignoreDefaultArgs: ['--disable-extensions'] 
   });
   
   try {
