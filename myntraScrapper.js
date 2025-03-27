@@ -157,6 +157,7 @@ function extractProductData($) {
   const productData = {
     image: null
   };
+  
   // Extract first image
   const firstImageElement = $('.image-grid-image').first();
   if (firstImageElement.length) {
@@ -179,7 +180,9 @@ function extractProductData($) {
         productData.image = imgUrl;
       }
     }
+    console.log(alternateImage, "ALTERNATEE")
   }
+  console.log(firstImageElement, "FIRST IMAGEE")
   
   return productData;
 }
