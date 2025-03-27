@@ -29,32 +29,16 @@ async function scrapeProduct(productUrl) {
  * @returns {Promise<Object>} - The scraped product data
  */
 async function scrapeWithPuppeteer(productUrl) {
-  // Install browser if needed (for Render)
-  if (process.env.NODE_ENV === 'production') {
-    try {
-      const { execSync } = require('child_process');
-      console.log('Installing browser for Puppeteer...');
-      execSync('npx puppeteer browsers install chrome');
-      console.log('Browser installed successfully');
-    } catch (error) {
-      console.error('Failed to install browser:', error);
-    }
-  }
-  
-  // Browser launch options
-  const options = { 
+  // Launch browser
+  const browser = await puppeteer.launch({ 
     headless: 'new',
     args: [
       '--no-sandbox', 
       '--disable-setuid-sandbox',
       '--disable-features=IsolateOrigins,site-per-process',
-      '--disable-web-security',
-      '--disable-dev-shm-usage'
+      '--disable-web-security'
     ] 
-  };
-  
-  // Launch browser
-  const browser = await puppeteer.launch(options);
+  });
   
   try {
     // Open new page
