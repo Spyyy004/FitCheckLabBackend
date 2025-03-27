@@ -12,7 +12,6 @@ router.post("/generate", authenticateUser, async (req, res) => {
   try {
     const userId = req?.user?.id;
 
-    // Extract all possible filter parameters from query
     const {
       occasion,
       season,
@@ -24,7 +23,6 @@ router.post("/generate", authenticateUser, async (req, res) => {
       brand,
     } = req.body;
 
-    // Use the reusable function with all parameters
     const result = await fetchWardrobeItems({
       userId,
       occasion,
@@ -45,8 +43,6 @@ router.post("/generate", authenticateUser, async (req, res) => {
       return res.json({ ...result });
     }
 
-
-    // Step 2: Organize items by category for better AI processing
     const organizedItems = {};
     filteredItems.forEach((item) => {
       if (!organizedItems[item.category]) {
@@ -65,83 +61,118 @@ router.post("/generate", authenticateUser, async (req, res) => {
       });
     });
 
-    // Step 3: Generate prompt for the AI
     const prompt = getOutfitGenerationPrompt({
       occasion,
       season,
       wardrobeItems: organizedItems,
     });
 
-    // Step 4: Call OpenAI API for outfit recommendation
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const aiResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: prompt },
-        {
-          role: "user",
-          content: `Generate a stylish outfit for ${
-            occasion || "everyday wear"
-          } in ${season || "current season"}.`,
-        },
-      ],
-      temperature: 0.7, // Slight creativity in outfit combinations
-    });
+    let outfitRecommendation = null;
+    let attempts = 0;
+    let isDuplicate = false;
 
-    // Step 5: Process AI response
-    if (!aiResponse?.choices?.[0]?.message?.content) {
-      console.error("❌ OpenAI Response Error: No valid response received");
-      return res.status(500).json({ error: "Error processing AI response." });
-    }
+    do {
+      attempts++;
 
-    let rawResponse = aiResponse.choices[0].message.content.trim();
-    if (rawResponse.startsWith("```json"))
-      rawResponse = rawResponse.replace("```json", "").trim();
-    if (rawResponse.endsWith("```"))
-      rawResponse = rawResponse.replace("```", "").trim();
+      const aiResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: prompt },
+          {
+            role: "user",
+            content: `Generate a stylish outfit for ${
+              occasion || "everyday wear"
+            } in ${season || "current season"}.`,
+          },
+        ],
+        temperature: 0.7,
+      });
 
-    let outfitRecommendation = {};
-    try {
-      outfitRecommendation = JSON.parse(rawResponse);
+      if (!aiResponse?.choices?.[0]?.message?.content) {
+        console.error("❌ OpenAI Response Error: No valid response received");
+        return res.status(500).json({ error: "Error processing AI response." });
+      }
 
-      if (userId) {
-        const { data: profile, error: fetchError } = await supabase
-          .from("profiles")
-          .select("ai_outfit_from_wardrobe_count")
-          .eq("id", userId)
-          .single();
-      
-        if (fetchError) {
-          console.warn("⚠️ Couldn't fetch profile usage count:", fetchError);
+      let rawResponse = aiResponse.choices[0].message.content.trim();
+      if (rawResponse.startsWith("```json"))
+        rawResponse = rawResponse.replace("```json", "").trim();
+      if (rawResponse.endsWith("```"))
+        rawResponse = rawResponse.replace("```", "").trim();
+
+      try {
+        outfitRecommendation = JSON.parse(rawResponse);
+
+        const currentIds = (outfitRecommendation?.outfit || []).map(i => i.id).sort();
+
+        const { data: recentOutfits, error: recentError } = await supabase
+          .from(" outfits")
+          .select("generated_outfit")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(3);
+
+        if (recentError) {
+          console.warn("⚠️ Failed to fetch recent outfits:", recentError);
+          isDuplicate = false;
         } else {
-          const { error: updateError } = await supabase
-            .from("profiles")
-            .update({
-              ai_outfit_from_wardrobe_count: (profile.ai_outfit_from_wardrobe_count || 0) + 1,
-            })
-            .eq("id", userId);
-      
-          if (updateError) {
-            console.error("⚠️ Failed to increment outfit-from-wardrobe count:", updateError);
-          }
+          isDuplicate = recentOutfits.some((past) => {
+            const pastIds = (past.generated_outfit?.outfit || []).map(i => i.id).sort();
+            return JSON.stringify(pastIds) === JSON.stringify(currentIds);
+          });
+        }
+
+      } catch (parseError) {
+        console.error("❌ Failed to parse OpenAI response:", parseError);
+        return res.status(500).json({ error: "Invalid AI response format." });
+      }
+
+    } while (isDuplicate && attempts < 2); // retry once only
+
+    // ✅ Save usage count and outfit to DB
+    if (userId) {
+      const { data: profile, error: fetchError } = await supabase
+        .from("profiles")
+        .select("ai_outfit_from_wardrobe_count")
+        .eq("id", userId)
+        .single();
+    
+      if (fetchError) {
+        console.warn("⚠️ Couldn't fetch profile usage count:", fetchError);
+      } else {
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            ai_outfit_from_wardrobe_count: (profile.ai_outfit_from_wardrobe_count || 0) + 1,
+          })
+          .eq("id", userId);
+
+        if (updateError) {
+          console.error("⚠️ Failed to increment outfit-from-wardrobe count:", updateError);
         }
       }
-    } catch (parseError) {
-      console.error("❌ Failed to parse OpenAI response:", parseError);
-      return res.status(500).json({ error: "Invalid AI response format." });
+
+      await supabase.from("outfits").insert([
+        {
+          user_id: userId,
+          generated_outfit: outfitRecommendation,
+          created_at: new Date().toISOString(),
+        },
+      ]);
     }
 
     return res.json({ ...result, ...outfitRecommendation });
   } catch (error) {
     console.error("❌ Server Error:", error);
-    trackEvent("","API Failure",{
-      error : error?.message ?? "Error Message",
+    trackEvent("", "API Failure", {
+      error: error?.message ?? "Error Message",
       type: "generate-outfit"
-    })
+    });
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 function getOutfitGenerationPrompt({ occasion, season, wardrobeItems }) {
   return `You are an expert fashion stylist specializing in outfit creation and personal styling.
