@@ -4,6 +4,7 @@ import { supabase } from "../config/supabaseClient.js";
 import { OpenAI } from "openai";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 import { trackEvent } from "../mixpanel.js";
+import { scrapeProduct } from "../myntraScrapper.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -33,7 +34,7 @@ router.post("/add/single", authenticateUser, upload.array("image"), async (req, 
 
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
       const userId = req?.user?.id ?? "";
-      const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId });
+      const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId, generateImage: false });
 
       for (const item of analysisItems) {
         let finalImageUrl = imageUrl; // fallback image
@@ -136,7 +137,7 @@ router.post("/add/myntra", authenticateUser, upload.array("image"), async (req, 
 
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
       const userId = req?.user?.id ?? "";
-      const analysisItems = await analyzeAndGenerateClothingItemsForMyntra({ imageUrl, userId });
+      const analysisItems = await analyzeAndGenerateClothingItemsForMyntra({ imageUrl, userId, generateImage: true });
 
       for (const item of analysisItems) {
         let finalImageUrl = imageUrl; // fallback image
@@ -240,7 +241,7 @@ router.post("/add/multiple", authenticateUser, upload.array("image"), async (req
 
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
       const userId = req?.user?.id ?? "";
-      const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId });
+      const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId, generateImage: true });
 
       for (const item of analysisItems) {
         let finalImageUrl = imageUrl; // fallback image
@@ -319,6 +320,83 @@ router.post("/add/multiple", authenticateUser, upload.array("image"), async (req
   }
 });
 
+router.post("/add/myntra-url", authenticateUser, async (req, res) => {
+  try {
+    const { url } = req.body || {};
+    
+    if (!url) {
+      return res.status(400).json({ error: "No Myntra URL provided." });
+    }
+    
+    // Scrape the product image from the Myntra URL
+    const productData = await scrapeProduct(url);
+    
+    if (!productData || !productData.image) {
+      return res.status(400).json({ error: "Failed to extract product image from the URL." });
+    }
+    
+    const imageUrl = productData.image;
+    const userId = req?.user?.id ?? "";
+    
+    // Use the existing function to analyze the clothing item
+    const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId, generateImage: false });
+    
+    if (!analysisItems || analysisItems.length === 0) {
+      return res.status(400).json({ error: "Failed to analyze the clothing item." });
+    }
+    
+    const insertedItems = [];
+    
+    for (const item of analysisItems) {
+      const { data: clothingItem, error: dbError } = await supabase
+        .from("clothing_items")
+        .insert([
+          {
+            user_id: req?.user?.id,
+            category: item["Category"],
+            sub_category: item["Subcategory"],
+            material: item["Material"],
+            brand: item["Brand"],
+            fit_type: item["Fit"],
+            image_url: imageUrl,
+            name: item.suggested_name || `${item["Primary Color"] || ""} ${item["Subcategory"]}`,
+            colors: item["Colors"],
+            primary_color: item["Primary Color"],
+            pattern: item["Pattern"],
+            seasons: item["Seasons"],
+            occasions: item["Occasions"],
+            style_tags: item["Style Tags"],
+            analysis_json: item,
+          },
+        ])
+        .select();
+    
+      if (dbError) {
+        console.error("❌ Database Insert Error:", dbError);
+        return res.status(500).json({ error: "Error saving clothing item to database." });
+      }
+    
+      insertedItems.push(clothingItem[0]);
+    }
+    
+    trackEvent(req?.user?.id, "Wardrobe", {
+      items: analysisItems?.length,
+      type: "add-item-myntra-url",
+    });
+    
+    return res.status(201).json({
+      message: "Clothing item added successfully",
+      items: insertedItems,
+    });
+  } catch (error) {
+    trackEvent("", "API Failure", {
+      error: error?.message ?? "Error Message",
+      type: "add-cloth-wardrobe-myntra-url"
+    });
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // 🔹 Helper to download image from URL to buffer
 const downloadImageToBuffer = async (url) => {
   const res = await fetch(url);
@@ -327,7 +405,7 @@ const downloadImageToBuffer = async (url) => {
 };
 
 // 🔹 Analyze clothing items and generate AI images
-export async function analyzeAndGenerateClothingItems({ imageUrl, userId }) {
+export async function analyzeAndGenerateClothingItems({ imageUrl, userId, generateImage }) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const prompt = `You are an advanced fashion AI trained to analyze outfit images and extract structured metadata for each clothing item. Your task is to identify all clothing and accessory pieces in the given image and return a structured JSON response containing their metadata.
 
@@ -398,7 +476,7 @@ Return your response in the following valid JSON structure only (no commentary):
   }
 
   const generatedItems = [];
-  if(items?.length === 1){
+  if(!generateImage){
     return [
       {
         ...items[0],
