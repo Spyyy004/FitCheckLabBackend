@@ -73,8 +73,14 @@ async function scrapeWithPuppeteer(productUrl) {
       waitUntil: 'networkidle2', 
       timeout: 60000 
     });
+    await page.waitForSelector('.image-grid-imageContainer', { timeout: 10000 });
     // Get page content
-    const content = await page.content();
+    const content = await page.evaluate(() => document.documentElement.outerHTML);
+
+    const allClasses = await page.evaluate(() => {
+      return Array.from(document.querySelectorAll('*')).map(el => el.className);
+    });
+    console.log("Classes on page:", allClasses);
     
     // Load content into Cheerio
     const $ = cheerio.load(content);
