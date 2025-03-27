@@ -192,9 +192,9 @@ if (imageElements.length > 0) {
         productData.image = imgUrl;
       }
     }
-    console.log(alternateImage, "ALTERNATEE")
+    // console.log(alternateImage, "ALTERNATEE")
   }
-  console.log(firstImageElement, "FIRST IMAGEE")
+  console.log(imageElements, "FIRST IMAGEE")
   
   return productData;
 }
