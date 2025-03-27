@@ -5,8 +5,8 @@
   "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
+    "ansi": "^0.3.1",
     "axios": "^1.8.4",
-    "chromium": "^3.0.3",
     "cheerio": "^1.0.0",
     "chromium": "^3.0.3",
     "cookie-parser": "^1.4.7",
@@ -22,7 +22,8 @@
     "openai": "^4.87.3",
     "puppeteer": "^24.4.0",
     "standardwebhooks": "^1.0.0",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "wrap": "^0.1.2"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
