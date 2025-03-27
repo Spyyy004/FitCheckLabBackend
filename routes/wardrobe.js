@@ -389,6 +389,7 @@ router.post("/add/myntra-url", authenticateUser, async (req, res) => {
       items: insertedItems,
     });
   } catch (error) {
+    console.error("❌ Server Error:", error);
     trackEvent("", "API Failure", {
       error: error?.message ?? "Error Message",
       type: "add-cloth-wardrobe-myntra-url"
