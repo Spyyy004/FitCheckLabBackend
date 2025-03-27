@@ -32,7 +32,7 @@ async function scrapeWithPuppeteer(productUrl) {
   // Launch browser
   const browser = await puppeteer.launch({ 
     headless: 'new',
-    executablePath: '/usr/bin/google-chrome-stable',
+    executablePath: '/opt/homebrew/bin/chromium',
     args: [
       '--no-sandbox', 
       '--disable-setuid-sandbox',
