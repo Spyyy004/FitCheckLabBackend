@@ -394,7 +394,7 @@ router.post("/add/myntra-url", authenticateUser, async (req, res) => {
       error: error?.message ?? "Error Message",
       type: "add-cloth-wardrobe-myntra-url"
     });
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "Internal Server Error", message: error });
   }
 });
 
