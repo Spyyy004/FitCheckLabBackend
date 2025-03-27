@@ -34,9 +34,14 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
       console.log(` Activating premium for ${customerEmail}`);
 
       const { error } = await supabase
-        .from("profiles")
-        .update({ is_premium: true, subscription_tier : 'ultimate' })
-        .eq("email", customerEmail);
+      .from("profiles")
+      .update({
+        is_premium: true,
+        subscription_tier: 'ultimate',
+        last_usage_reset: new Date().toISOString()
+      })
+      .eq("email", customerEmail);
+    
 
       if (error) {
         console.error("Failed to update user as premium:", error);
@@ -49,7 +54,7 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
 
       const { error } = await supabase
         .from("profiles")
-        .update({ is_premium: true, subscription_tier : 'ultimate' })
+        .update({ is_premium: true, subscription_tier : 'ultimate',last_usage_reset: new Date().toISOString() })
         .eq("email", customerEmail);
 
       if (error) {
@@ -69,7 +74,7 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
 
       const { error } = await supabase
         .from("profiles")
-        .update({ is_premium: true, subscription_tier : 'ultimate' })
+        .update({ is_premium: true, subscription_tier : 'free',last_usage_reset: new Date().toISOString() })
         .eq("email", customerEmail);
 
       if (error) {
