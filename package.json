@@ -23,7 +23,8 @@
     "puppeteer": "^24.4.0",
     "standardwebhooks": "^1.0.0",
     "uuid": "^11.1.0",
-    "wrap": "^0.1.2"
+    "wrap": "^0.1.2",
+    "wrap-ansi": "^9.0.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
