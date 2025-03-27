@@ -332,7 +332,7 @@ router.post("/add/myntra-url", authenticateUser, async (req, res) => {
     const productData = await scrapeProduct(url);
     
     if (!productData || !productData.image) {
-      return res.status(400).json({ error: "Failed to extract product image from the URL." });
+      return res.status(400).json({ error: `Failed to extract product image from the URL.${productData}` });
     }
     
     const imageUrl = productData.image;
