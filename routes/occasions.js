@@ -33,7 +33,8 @@ router.get("/",authenticateUser, async (req, res) => {
     const { data: occasions, error: occasionsError } = await supabase
       .from("occasions")
       .select("*")
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .gte("date_time", new Date().toISOString());
 
     if (occasionsError) 
       return res.status(400).json({ error: occasionsError.message });
