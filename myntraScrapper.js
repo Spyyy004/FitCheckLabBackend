@@ -125,6 +125,8 @@ async function getProductFromApi(productId) {
     
     const response = await axios.get(apiUrl, { headers });
     const data = response.data;
+
+    console.log("myntra data", data)
     
     // Format API data to match our expected format
     if (data && data.style) {
