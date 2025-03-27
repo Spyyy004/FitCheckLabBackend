@@ -74,7 +74,7 @@ async function scrapeWithPuppeteer(productUrl) {
       timeout: 60000 
     });
     // Get page content
-    const content = await page.content();
+    const content = await page.evaluate(() => document.documentElement.outerHTML);
     
     // Load content into Cheerio
     const $ = cheerio.load(content);
