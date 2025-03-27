@@ -229,7 +229,13 @@ router.post("/add", authenticateUser, async (req, res) => {
       return res.status(400).json({ error: "At least one clothing item is required." });
     }
     
+    // Check if this is the user's first outfit
+    const { data: existingOutfits, error: outfitCountError } = await supabase
+      .from("outfits")
+      .select("id")
+      .eq("user_id", userId);
     
+    const isFirstOutfit = !outfitCountError && (!existingOutfits || existingOutfits.length === 0);
     
     // Store outfit in the database
     const { data: outfit, error } = await supabase
@@ -251,7 +257,23 @@ router.post("/add", authenticateUser, async (req, res) => {
       console.error("❌ Database Insert Error:", error);
       return res.status(500).json({ error: "Error saving outfit to database." });
     }
-    
+
+    // Check if this is the user's first outfit
+    if (isFirstOutfit) {
+      // This is the first outfit for this user, upgrade them to premium
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          is_premium: true,
+          subscription_tier: 'premium',
+          last_usage_reset: new Date().toISOString()
+        })
+        .eq("id", userId);
+
+      if (updateError) {
+        console.log(updateError, "UPDATE ERROR");
+      }
+    }
 
     // Create an occasion if occasion data is provided
     let createdOccasion = null;
