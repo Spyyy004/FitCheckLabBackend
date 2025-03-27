@@ -73,7 +73,7 @@ async function scrapeWithPuppeteer(productUrl) {
       waitUntil: 'networkidle2', 
       timeout: 60000 
     });
-    await page.waitForSelector('.image-grid-imageContainer', { timeout: 10000 });
+    await page.waitForSelector('.image-grid-container', { timeout: 10000 });
     // Get page content
     const content = await page.evaluate(() => document.documentElement.outerHTML);
 
