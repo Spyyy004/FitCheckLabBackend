@@ -31,7 +31,7 @@ async function scrapeProduct(productUrl) {
 async function scrapeWithPuppeteer(productUrl) {
   // Launch browser
   const browser = await puppeteer.launch({ 
-    headless: 'new',
+    headless: 'false',
     executablePath: '/opt/render/project/src/.cache/puppeteer/chrome/linux-134.0.6998.35/chrome-linux64/chrome',
     args: [
       '--no-sandbox', 
@@ -73,14 +73,8 @@ async function scrapeWithPuppeteer(productUrl) {
       waitUntil: 'networkidle2', 
       timeout: 60000 
     });
-    await page.waitForSelector('.image-grid-container', { timeout: 10000 });
     // Get page content
-    const content = await page.evaluate(() => document.documentElement.outerHTML);
-
-    const allClasses = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll('*')).map(el => el.className);
-    });
-    console.log("Classes on page:", allClasses);
+    const content = await page.content();
     
     // Load content into Cheerio
     const $ = cheerio.load(content);
@@ -165,17 +159,29 @@ function extractProductData($) {
   };
   
   // Extract first image
-  const firstImageElement = $('.image-grid-image').first();
-  if (firstImageElement.length) {
-    const imgUrl = firstImageElement.attr('style');
-    if (imgUrl) {
-      // Extract URL from background-image style
-      const match = imgUrl.match(/url\(['"]?(.*?)['"]?\)/);
-      if (match && match[1]) {
-        productData.image = match[1];
-      }
+  // const firstImageElement = $('.image-grid-image').first();
+  // if (firstImageElement.length) {
+  //   const imgUrl = firstImageElement.attr('style');
+  //   if (imgUrl) {
+  //     // Extract URL from background-image style
+  //     const match = imgUrl.match(/url\(['"]?(.*?)['"]?\)/);
+  //     if (match && match[1]) {
+  //       productData.image = match[1];
+  //     }
+  //   }
+  // }
+
+  const imageElements = $('.image-grid-image');
+if (imageElements.length > 0) {
+  const firstImageStyle = imageElements.first().attr('style');
+
+  if (firstImageStyle) {
+    const match = firstImageStyle.match(/url\(["']?(.*?)["']?\)/);
+    if (match && match[1]) {
+      productData.image = match[1];
     }
   }
+}
   
   // If no image found via the above method, try alternate selector
   if (!productData.image) {
