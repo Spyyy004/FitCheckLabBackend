@@ -19,9 +19,9 @@ router.post("/add/single", authenticateUser, upload.array("image"), async (req, 
       return res.status(400).json({ error: "No images uploaded." });
     }
 
-    const insertedItems = [];
-
-    for (const file of req.files) {
+    // Process each file in parallel
+    const processFile = async (file) => {
+      // Upload file to Supabase
       const filePath = `wardrobe_${Date.now()}_${file.originalname}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("wardrobe")
@@ -29,29 +29,32 @@ router.post("/add/single", authenticateUser, upload.array("image"), async (req, 
 
       if (uploadError) {
         console.error("❌ Supabase Upload Error:", uploadError);
-        return res.status(500).json({ error: "Error uploading image to Supabase." });
+        throw new Error("Error uploading image to Supabase.");
       }
 
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
       const userId = req?.user?.id ?? "";
       const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId, generateImage: false });
-
+      
+      const fileItems = [];
+      
+      // Process each analyzed item
       for (const item of analysisItems) {
         let finalImageUrl = imageUrl; // fallback image
-      
+        
         try {
           if (item.generated_image_url) {
             const response = await fetch(item.generated_image_url);
             const buffer = await response.arrayBuffer();
-      
+            
             const imagePath = `wardrobe/generated_${Date.now()}_${Math.random()}.png`;
-      
+            
             const { data: uploaded, error: uploadError } = await supabase.storage
               .from("wardrobe")
               .upload(imagePath, Buffer.from(buffer), {
                 contentType: "image/png",
               });
-      
+            
             if (uploadError) {
               console.warn("⚠️ Supabase Upload Failed. Using fallback image.", uploadError);
             } else {
@@ -61,7 +64,7 @@ router.post("/add/single", authenticateUser, upload.array("image"), async (req, 
         } catch (err) {
           console.warn("⚠️ Failed to fetch/upload generated image:", err);
         }
-      
+        
         const { data: clothingItem, error: dbError } = await supabase
           .from("clothing_items")
           .insert([
@@ -84,20 +87,33 @@ router.post("/add/single", authenticateUser, upload.array("image"), async (req, 
             },
           ])
           .select();
-      
+        
         if (dbError) {
           console.error("❌ Database Insert Error:", dbError);
-          return res.status(500).json({ error: "Error saving clothing item to database." });
+          throw new Error("Error saving clothing item to database.");
         }
-      
-        insertedItems.push(clothingItem[0]);
+        
+        fileItems.push(clothingItem[0]);
       }
       
       trackEvent(req?.user?.id, "Wardrobe", {
         items: analysisItems?.length,
         type: "add-item",
       });
-    }
+      
+      return fileItems;
+    };
+
+    // Execute all file processing in parallel
+    const results = await Promise.all(
+      req.files.map(file => processFile(file).catch(error => {
+        console.error("Error processing file:", error);
+        return []; // Return empty array for failed files so Promise.all doesn't fail completely
+      }))
+    );
+    
+    // Flatten the array of arrays into a single array
+    const insertedItems = results.flat();
 
     return res.status(201).json({
       message: "Clothing items added successfully",
@@ -122,9 +138,9 @@ router.post("/add/myntra", authenticateUser, upload.array("image"), async (req, 
       return res.status(400).json({ error: "No images uploaded." });
     }
 
-    const insertedItems = [];
-
-    for (const file of req.files) {
+    // Process each file in parallel
+    const processFile = async (file) => {
+      // Upload file to Supabase
       const filePath = `wardrobe_${Date.now()}_${file.originalname}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("wardrobe")
@@ -132,29 +148,32 @@ router.post("/add/myntra", authenticateUser, upload.array("image"), async (req, 
 
       if (uploadError) {
         console.error("❌ Supabase Upload Error:", uploadError);
-        return res.status(500).json({ error: "Error uploading image to Supabase." });
+        throw new Error("Error uploading image to Supabase.");
       }
 
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
       const userId = req?.user?.id ?? "";
       const analysisItems = await analyzeAndGenerateClothingItemsForMyntra({ imageUrl, userId, generateImage: true });
-
+      
+      const fileItems = [];
+      
+      // Process each analyzed item
       for (const item of analysisItems) {
         let finalImageUrl = imageUrl; // fallback image
-      
+        
         try {
           if (item.generated_image_url) {
             const response = await fetch(item.generated_image_url);
             const buffer = await response.arrayBuffer();
-      
+            
             const imagePath = `wardrobe/generated_${Date.now()}_${Math.random()}.png`;
-      
+            
             const { data: uploaded, error: uploadError } = await supabase.storage
               .from("wardrobe")
               .upload(imagePath, Buffer.from(buffer), {
                 contentType: "image/png",
               });
-      
+            
             if (uploadError) {
               console.warn("⚠️ Supabase Upload Failed. Using fallback image.", uploadError);
             } else {
@@ -164,7 +183,7 @@ router.post("/add/myntra", authenticateUser, upload.array("image"), async (req, 
         } catch (err) {
           console.warn("⚠️ Failed to fetch/upload generated image:", err);
         }
-      
+        
         const { data: clothingItem, error: dbError } = await supabase
           .from("clothing_items")
           .insert([
@@ -187,20 +206,33 @@ router.post("/add/myntra", authenticateUser, upload.array("image"), async (req, 
             },
           ])
           .select();
-      
+        
         if (dbError) {
           console.error("❌ Database Insert Error:", dbError);
-          return res.status(500).json({ error: "Error saving clothing item to database." });
+          throw new Error("Error saving clothing item to database.");
         }
-      
-        insertedItems.push(clothingItem[0]);
+        
+        fileItems.push(clothingItem[0]);
       }
       
       trackEvent(req?.user?.id, "Wardrobe", {
         items: analysisItems?.length,
         type: "add-item",
       });
-    }
+      
+      return fileItems;
+    };
+
+    // Execute all file processing in parallel
+    const results = await Promise.all(
+      req.files.map(file => processFile(file).catch(error => {
+        console.error("Error processing file:", error);
+        return []; // Return empty array for failed files so Promise.all doesn't fail completely
+      }))
+    );
+    
+    // Flatten the array of arrays into a single array
+    const insertedItems = results.flat();
 
     return res.status(201).json({
       message: "Clothing items added successfully",
@@ -226,9 +258,9 @@ router.post("/add/multiple", authenticateUser, upload.array("image"), async (req
       return res.status(400).json({ error: "No images uploaded." });
     }
 
-    const insertedItems = [];
-
-    for (const file of req.files) {
+    // Process each file in parallel
+    const processFile = async (file) => {
+      // Upload file to Supabase
       const filePath = `wardrobe_${Date.now()}_${file.originalname}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("wardrobe")
@@ -236,29 +268,32 @@ router.post("/add/multiple", authenticateUser, upload.array("image"), async (req
 
       if (uploadError) {
         console.error("❌ Supabase Upload Error:", uploadError);
-        return res.status(500).json({ error: "Error uploading image to Supabase." });
+        throw new Error("Error uploading image to Supabase.");
       }
 
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/wardrobe/${uploadData.path}`;
       const userId = req?.user?.id ?? "";
       const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId, generateImage: true });
-
+      
+      const fileItems = [];
+      
+      // Process each analyzed item
       for (const item of analysisItems) {
         let finalImageUrl = imageUrl; // fallback image
-      
+        
         try {
           if (item.generated_image_url) {
             const response = await fetch(item.generated_image_url);
             const buffer = await response.arrayBuffer();
-      
+            
             const imagePath = `wardrobe/generated_${Date.now()}_${Math.random()}.png`;
-      
+            
             const { data: uploaded, error: uploadError } = await supabase.storage
               .from("wardrobe")
               .upload(imagePath, Buffer.from(buffer), {
                 contentType: "image/png",
               });
-      
+            
             if (uploadError) {
               console.warn("⚠️ Supabase Upload Failed. Using fallback image.", uploadError);
             } else {
@@ -268,7 +303,7 @@ router.post("/add/multiple", authenticateUser, upload.array("image"), async (req
         } catch (err) {
           console.warn("⚠️ Failed to fetch/upload generated image:", err);
         }
-      
+        
         const { data: clothingItem, error: dbError } = await supabase
           .from("clothing_items")
           .insert([
@@ -291,20 +326,33 @@ router.post("/add/multiple", authenticateUser, upload.array("image"), async (req
             },
           ])
           .select();
-      
+        
         if (dbError) {
           console.error("❌ Database Insert Error:", dbError);
-          return res.status(500).json({ error: "Error saving clothing item to database." });
+          throw new Error("Error saving clothing item to database.");
         }
-      
-        insertedItems.push(clothingItem[0]);
+        
+        fileItems.push(clothingItem[0]);
       }
       
       trackEvent(req?.user?.id, "Wardrobe", {
         items: analysisItems?.length,
         type: "add-item",
       });
-    }
+      
+      return fileItems;
+    };
+
+    // Execute all file processing in parallel
+    const results = await Promise.all(
+      req.files.map(file => processFile(file).catch(error => {
+        console.error("Error processing file:", error);
+        return []; // Return empty array for failed files so Promise.all doesn't fail completely
+      }))
+    );
+    
+    // Flatten the array of arrays into a single array
+    const insertedItems = results.flat();
 
     return res.status(201).json({
       message: "Clothing items added successfully",
