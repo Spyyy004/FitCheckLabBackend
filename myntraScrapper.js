@@ -31,7 +31,7 @@ async function scrapeProduct(productUrl) {
 async function scrapeWithPuppeteer(productUrl) {
   // Launch browser
   const browser = await puppeteer.launch({ 
-    headless: 'false',
+    headless: 'new',
     executablePath: '/opt/render/project/src/.cache/puppeteer/chrome/linux-134.0.6998.35/chrome-linux64/chrome',
     args: [
       '--no-sandbox', 
