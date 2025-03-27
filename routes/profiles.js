@@ -26,7 +26,24 @@ router.get("/", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Profile not found" });
         }
 
-        return res.json(profile);
+        const { data: upcomingOccasions, error: occasionError } = await supabase
+        .from("occasions")
+        .select("*")
+        .eq("user_id", userId)
+        .gte("date_time", new Date().toISOString())
+        .order("date_time", { ascending: true })
+        .limit(1);
+  
+      if (occasionError) {
+        console.error("⚠️ Error fetching upcoming occasion:", occasionError);
+      }
+  
+      const nextOccasion = upcomingOccasions?.[0] || null;
+
+      return res.json({
+        ...profile,
+        next_occasion: nextOccasion,
+      });
     } catch (error) {
         console.error("❌ Server error fetching profile:", error);
         trackEvent("","API Failure",{
