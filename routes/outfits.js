@@ -107,7 +107,7 @@ router.post("/generate", authenticateUser, async (req, res) => {
         const currentIds = (outfitRecommendation?.outfit || []).map(i => i.id).sort();
 
         const { data: recentOutfits, error: recentError } = await supabase
-          .from(" outfits")
+          .from("outfits")
           .select("generated_outfit")
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
