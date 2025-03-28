@@ -67,14 +67,12 @@ async function scrapeWithPuppeteer(productUrl) {
     // Set viewport
     await page.setViewport({ width: 1280, height: 800 });
     
-    // Navigate to URL
-    console.log(`Navigating to ${productUrl}...`);
-    // Navigate to URL
-console.log(`Navigating to ${productUrl}...`);
-await page.goto(productUrl, { 
-  waitUntil: 'networkidle2', 
-  timeout: 60000 
-});
+    await page.goto(productUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+
+    await page.waitForSelector(".image-grid-image", { timeout: 15000 });
+
+    
 
 // ✅ Use page.content() instead of evaluate
 const content = await page.content();
