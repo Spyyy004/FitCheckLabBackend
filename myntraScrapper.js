@@ -72,7 +72,6 @@ async function scrapeWithPuppeteer(productUrl) {
     await page.setViewport({ width: 1280, height: 800 });
     
     await page.goto(productUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await page.waitForTimeout(5000)
 
     // await page.waitForSelector(".image-grid-image", { timeout: 15000 });
 
