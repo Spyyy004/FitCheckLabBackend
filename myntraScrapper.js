@@ -1,5 +1,6 @@
 // myntraScrapper.js
 import puppeteer from 'puppeteer';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 import fs from 'fs';
@@ -8,6 +9,8 @@ import fs from 'fs';
  * @param {string} productUrl - The URL of the product to scrape
  * @returns {Promise<Object>} - The scraped product data
  */
+
+puppeteer.use(StealthPlugin());
 async function scrapeProduct(productUrl) {
   try {
     // First try with Puppeteer

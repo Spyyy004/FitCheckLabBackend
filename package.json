@@ -21,6 +21,8 @@
     "node-fetch": "^3.3.2",
     "openai": "^4.87.3",
     "puppeteer": "^24.4.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "standardwebhooks": "^1.0.0",
     "uuid": "^11.1.0",
     "wrap": "^0.1.2",
