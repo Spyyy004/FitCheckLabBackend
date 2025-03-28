@@ -1,5 +1,5 @@
 // myntraScrapper.js
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
