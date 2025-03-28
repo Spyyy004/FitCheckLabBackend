@@ -69,18 +69,22 @@ async function scrapeWithPuppeteer(productUrl) {
     
     // Navigate to URL
     console.log(`Navigating to ${productUrl}...`);
-    await page.goto(productUrl, { 
-      waitUntil: 'networkidle2', 
-      timeout: 60000 
-    });
-    // Get page content
-    const content = await page.evaluate(() => document.documentElement.outerHTML);
-    
-    // Load content into Cheerio
-    const $ = cheerio.load(content);
-    
-    // Extract product data
-    const productData = extractProductData($);
+    // Navigate to URL
+console.log(`Navigating to ${productUrl}...`);
+await page.goto(productUrl, { 
+  waitUntil: 'networkidle2', 
+  timeout: 60000 
+});
+
+// ✅ Use page.content() instead of evaluate
+const content = await page.content();
+
+// Load content into Cheerio
+const $ = cheerio.load(content);
+
+// Extract product data
+const productData = extractProductData($);
+
     
     return productData;
   } finally {
