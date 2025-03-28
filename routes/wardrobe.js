@@ -416,85 +416,80 @@ router.post("/add/myntra-url", authenticateUser, async (req, res) => {
 
 
 
-// router.post("/add/myntra-url", authenticateUser, async (req, res) => {
-//   try {
-//     const { url } = req.body || {};
-    
-//     if (!url) {
-//       return res.status(400).json({ error: "No Myntra URL provided." });
-//     }
-    
-//     // Scrape the product image from the Myntra URL
-//     const productData = await scrapeProduct(url);
-//     console.log(productData,"PRLDDOSS")
-//     if (!productData || !productData.image) {
-//       return res.status(400).json({ error: `Failed to extract product image from the URL.${productData}` });
-//     }
-    
-//     const imageUrl = productData.image;
-//     const userId = req?.user?.id ?? "";
-    
-//     // Use the existing function to analyze the clothing item
-//     const analysisItems = await analyzeAndGenerateClothingItems({ imageUrl, userId, generateImage: false });
-    
-//     if (!analysisItems || analysisItems.length === 0) {
-//       return res.status(400).json({ error: "Failed to analyze the clothing item." });
-//     }
-    
-//     const insertedItems = [];
-    
-//     for (const item of analysisItems) {
-//       const { data: clothingItem, error: dbError } = await supabase
-//         .from("clothing_items")
-//         .insert([
-//           {
-//             user_id: req?.user?.id,
-//             category: item["Category"],
-//             sub_category: item["Subcategory"],
-//             material: item["Material"],
-//             brand: item["Brand"],
-//             fit_type: item["Fit"],
-//             image_url: imageUrl,
-//             name: item.suggested_name || `${item["Primary Color"] || ""} ${item["Subcategory"]}`,
-//             colors: item["Colors"],
-//             primary_color: item["Primary Color"],
-//             pattern: item["Pattern"],
-//             seasons: item["Seasons"],
-//             occasions: item["Occasions"],
-//             style_tags: item["Style Tags"],
-//             analysis_json: item,
-//           },
-//         ])
-//         .select();
-    
-//       if (dbError) {
-//         console.error("❌ Database Insert Error:", dbError);
-//         return res.status(500).json({ error: "Error saving clothing item to database." });
-//       }
-    
-//       insertedItems.push(clothingItem[0]);
-//     }
-    
-//     trackEvent(req?.user?.id, "Wardrobe", {
-//       items: analysisItems?.length,
-//       type: "add-item-myntra-url",
-//     });
-    
-//     return res.status(201).json({
-//       message: "Clothing item added successfully",
-//       items: insertedItems,
-//     });
-//   } catch (error) {
-//     console.error("❌ Server Error:", error);
-//     trackEvent("", "API Failure", {
-//       error: error?.message ?? "Error Message",
-//       type: "add-cloth-wardrobe-myntra-url"
-//     });
-//     return res.status(500).json({ error: "Internal Server Error", message: error?.message ?? "Error Message" });
-//   }
-// });
 
-// 🔹 Helper to download image from URL to buffer
+
+router.post('/process-myntra-submissions', async (req, res) => {
+  try {
+    const { data: submissions, error } = await supabase
+      .from('myntra_submissions')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error("❌ Failed to fetch submissions:", error.message);
+      return res.status(500).json({ error: "Failed to fetch submissions" });
+    }
+
+    const processed = [];
+    const failed = [];
+
+    for (const entry of submissions) {
+      const { id, product_url, user_id } = entry;
+
+      try {
+        const productData = await scrapeProduct(product_url);
+        if (!productData?.image) throw new Error("No image extracted");
+
+        const analysisItems = await analyzeAndGenerateClothingItems({
+          imageUrl: productData.image,
+          userId: user_id,
+          generateImage: false,
+        });
+
+        if (!analysisItems?.length) throw new Error("Analysis failed");
+
+        for (const item of analysisItems) {
+          const { error: dbError } = await supabase.from("clothing_items").insert([
+            {
+              user_id,
+              category: item["Category"],
+              sub_category: item["Subcategory"],
+              material: item["Material"],
+              brand: item["Brand"],
+              fit_type: item["Fit"],
+              image_url: productData.image,
+              name: item.suggested_name || `${item["Primary Color"] || ""} ${item["Subcategory"]}`,
+              colors: item["Colors"],
+              primary_color: item["Primary Color"],
+              pattern: item["Pattern"],
+              seasons: item["Seasons"],
+              occasions: item["Occasions"],
+              style_tags: item["Style Tags"],
+              analysis_json: item,
+            },
+          ]);
+          if (dbError) throw new Error("Insert failed: " + dbError.message);
+        }
+
+        // Clean up after processing
+        await supabase.from("myntra_submissions").delete().eq("id", id);
+        processed.push(product_url);
+      } catch (err) {
+        console.error(`❌ Error processing URL ${product_url}:`, err.message);
+        failed.push({ url: product_url, error: err.message });
+      }
+    }
+
+    return res.status(200).json({
+      message: "Cron processing complete",
+      processed,
+      failed,
+    });
+  } catch (error) {
+    console.error("❌ Server error:", error.message);
+    return res.status(500).json({ error: "Internal Server Error", message: error.message });
+  }
+});
 
 
 const downloadImageToBuffer = async (url) => {
