@@ -78,7 +78,7 @@ async function scrapeWithPuppeteer(productUrl) {
 const content = await page.content();
 
 fs.writeFileSync('page-debug.html', content);
-console.log("✅ HTML saved to page-debug.html");
+console.log("✅ HTML saved to page-debug.html", content);
 // Load content into Cheerio
 const $ = cheerio.load(content);
 
@@ -198,7 +198,7 @@ if (imageElements.length > 0) {
     }
     // console.log(alternateImage, "ALTERNATEE")
   }
-  console.log(imageElements, "FIRST IMAGEE")
+  // console.log(imageElements, "FIRST IMAGEE")
   
   return productData;
 }
