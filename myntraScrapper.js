@@ -77,7 +77,7 @@ async function scrapeWithPuppeteer(productUrl) {
 // ✅ Use page.content() instead of evaluate
 const content = await page.content();
 
-fs.writeFileSync('page-debug.html', html);
+fs.writeFileSync('page-debug.html', content);
 console.log("✅ HTML saved to page-debug.html");
 // Load content into Cheerio
 const $ = cheerio.load(content);
