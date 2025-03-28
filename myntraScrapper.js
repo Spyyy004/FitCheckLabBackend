@@ -45,7 +45,7 @@ async function scrapeWithPuppeteer(productUrl) {
     ] ,
     ignoreDefaultArgs: ['--disable-extensions'] 
   });
-  
+
   try {
     // Open new page
     const page = await browser.newPage();
@@ -64,14 +64,15 @@ async function scrapeWithPuppeteer(productUrl) {
       'Sec-Fetch-Mode': 'navigate',
       'Sec-Fetch-Site': 'same-origin',
       'Sec-Fetch-User': '?1',
-      'Upgrade-Insecure-Requests': '1'
+      'Upgrade-Insecure-Requests': '1',
+      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36'
     });
     
     // Set viewport
     await page.setViewport({ width: 1280, height: 800 });
     
     await page.goto(productUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-
+    await page.waitForTimeout(5000)
 
     // await page.waitForSelector(".image-grid-image", { timeout: 15000 });
 
