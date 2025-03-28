@@ -2,7 +2,7 @@
 import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
-
+import fs from 'fs';
 /**
  * Scrapes a single product from Myntra using both Puppeteer and Axios as fallback
  * @param {string} productUrl - The URL of the product to scrape
@@ -70,13 +70,15 @@ async function scrapeWithPuppeteer(productUrl) {
     await page.goto(productUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
 
-    await page.waitForSelector(".image-grid-image", { timeout: 15000 });
+    // await page.waitForSelector(".image-grid-image", { timeout: 15000 });
 
     
 
 // ✅ Use page.content() instead of evaluate
 const content = await page.content();
 
+fs.writeFileSync('page-debug.html', html);
+console.log("✅ HTML saved to page-debug.html");
 // Load content into Cheerio
 const $ = cheerio.load(content);
 
