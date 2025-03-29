@@ -4,7 +4,7 @@ import { supabase } from "../config/supabaseClient.js";
 import { OpenAI } from "openai";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 import { trackEvent } from "../mixpanel.js";
-import { scrapeProduct } from "../myntraScrapper.js";
+import { scrapeProduct } from "../myntraScrapper2.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -369,7 +369,7 @@ router.post("/add/multiple", authenticateUser, upload.array("image"), async (req
 });
 
 
-router.post("/add/myntra-url", authenticateUser, async (req, res) => {
+router.post("/add/myntra-url", async (req, res) => {
   try {
     const { url } = req.body || {};
     const userId = req?.user?.id ?? "";
