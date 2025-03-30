@@ -583,7 +583,7 @@ if (userId && items?.length > 0) {
 }
 
 
-  return generatedItems;
+return [...items];
 }
 
 export async function analyzeAndGenerateClothingItemsForMyntra({ imageUrl, userId }) {
