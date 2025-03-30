@@ -369,16 +369,19 @@ router.post("/add/multiple", authenticateUser, upload.array("image"), async (req
 });
 
 
-router.post("/add/myntra-url", async (req, res) => {
+router.post("/add/myntra-url", authenticateUser, async (req, res) => {
   try {
     const { url } = req.body || {};
-    const userId = req?.user?.id ?? "";
+    const userId = req.user?.id;
 
     if (!url) {
       return res.status(400).json({ error: "No Myntra URL provided." });
     }
 
-    // Insert the product URL into the myntra_submissions table
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized: User ID missing" });
+    }
+
     const { data, error } = await supabase
       .from("myntra_submissions")
       .insert([
@@ -413,6 +416,7 @@ router.post("/add/myntra-url", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error", message: error?.message ?? "Error Message" });
   }
 });
+
 
 
 
