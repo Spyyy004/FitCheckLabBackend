@@ -45,7 +45,6 @@ export const processImageGenerationQueue = async () => {
       .select("*")
       .eq("api_name", "openai_image_generation")
       .single();
-
     if (rateLimitError && rateLimitError.code !== "PGRST116") {
       console.error("❌ Error checking rate limits:", rateLimitError);
       return { success: false, message: "Failed to check rate limits" };
@@ -69,7 +68,6 @@ export const processImageGenerationQueue = async () => {
         currentCount = rateLimitData.request_count;
       }
     }
-
     // Abort if we've hit the rate limit
     if (currentCount >= RATE_LIMIT) {
       return {
@@ -94,12 +92,11 @@ export const processImageGenerationQueue = async () => {
         console.error("❌ Failed to pop from queue:", popError);
         break;
       }
-
       // No more messages in queue
-      if (!message) break;
+      if (!message || !(message && message.length)) break;
 
       // Add to our list to process
-      messagesToProcess.push(message);
+      messagesToProcess.push(message[0]);
     }
 
     // If we have no messages to process, we're done
