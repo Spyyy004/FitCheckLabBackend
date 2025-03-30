@@ -11,10 +11,11 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const sendImageGenerationToQueue = async (body) => {
   try {
+    console.log("Sending image generation to queue:", body);
     const result = await supabase.schema('pgmq_public').rpc('send', {
       queue_name: 'image_generation',
       message: body,
-      sleep_seconds: 30,
+      sleep_seconds: 0,
     })
   } catch (error) {
     console.error("❌ Failed to send image generation to queue:", error);
