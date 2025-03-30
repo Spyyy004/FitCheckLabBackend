@@ -60,7 +60,7 @@ cron.schedule('55 23 * * *', () => {
     cleanupUnlinkedOutfits()
 })
 
-// Schedule to run image processing every 5 seconds
+// Schedule to run image processing every 10 seconds
 cron.schedule('*/10 * * * * *', () => {
     processImageQueue()
 })
