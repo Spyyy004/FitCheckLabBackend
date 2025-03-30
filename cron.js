@@ -61,7 +61,7 @@ cron.schedule('55 23 * * *', () => {
 })
 
 // Schedule to run image processing every 5 seconds
-cron.schedule('*/5 * * * * *', () => {
+cron.schedule('*/10 * * * * *', () => {
     processImageQueue()
 })
 
