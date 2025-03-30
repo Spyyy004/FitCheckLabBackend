@@ -119,8 +119,16 @@ router.get("/ip-address", async (req, res) => {
     const isIndia = countryCode === "IN";
 
     const paymentLink = isIndia
-      ? process.env.DODO_PAYMENT_LINK_INDIA
-      : process.env.DODO_PAYMENT_LINK_GLOBAL;
+      ? {"ultimate_monthly" : process.env.DODO_PAYMENT_LINK_INDIA,
+         "ultimate_yearly": process.env.DODO_PAYMENT_LINK_INDIA_YEARLY,
+         "premium_monthly": process.env.DODO_PAYMENT_LINK_INDIA_PREMIUM,
+         "premium_yearly": process.env.DODO_PAYMENT_LINK_INDIA_PREMIUM_YEARLY
+      }
+      : {"ultimate_monthly" : process.env.DODO_PAYMENT_LINK_GLOBAL,
+        "ultimate_yearly": process.env.DODO_PAYMENT_LINK_GLOBAL_YEARLY,
+        "premium_monthly": process.env.DODO_PAYMENT_LINK_GLOBAL_PREMIUM,
+        "premium_yearly": process.env.DODO_PAYMENT_LINK_GLOBAL_PREMIUM_YEARLY
+     };
 
     return res.json({
       success: true,
