@@ -1,6 +1,10 @@
 import { supabase } from './config/supabaseClient.js'
 import cron from 'node-cron'
+import fetch from 'node-fetch'
+import dotenv from 'dotenv'
+import { processImageGenerationQueue } from './edgeFunctions/imageGeneration.js'
 
+dotenv.config()
 
 const cleanupUnlinkedOutfits = async () => {
     const now = new Date()
@@ -42,7 +46,24 @@ const cleanupUnlinkedOutfits = async () => {
   }
   
 
+// Process the image generation queue
+const processImageQueue = async () => {
+  try {
+    await processImageGenerationQueue();
+  } catch (error) {
+    console.error('❌ Error triggering image queue processing:', error);
+  }
+};
+
 // Schedule to run every day at 12:00 AM
 cron.schedule('55 23 * * *', () => {
     cleanupUnlinkedOutfits()
-  })
+})
+
+// Schedule to run image processing every 5 seconds
+cron.schedule('*/5 * * * * *', () => {
+    processImageQueue()
+})
+
+// Log that cron jobs are running
+console.log('🕒 Cron jobs scheduled successfully');

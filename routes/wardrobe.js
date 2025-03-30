@@ -9,6 +9,18 @@ import { scrapeProduct } from "../myntraScrapper2.js";
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+const sendImageGenerationToQueue = async (body) => {
+  try {
+    const result = await supabase.schema('pgmq_public').rpc('send', {
+      queue_name: 'image_generation',
+      message: body,
+      sleep_seconds: 30,
+    })
+  } catch (error) {
+    console.error("❌ Failed to send image generation to queue:", error);
+  }
+}
+
 
 router.post("/add/single", authenticateUser, upload.array("image"), async (req, res) => {
   try {
@@ -159,30 +171,6 @@ router.post("/add/myntra", authenticateUser, upload.array("image"), async (req, 
       
       // Process each analyzed item
       for (const item of analysisItems) {
-        let finalImageUrl = imageUrl; // fallback image
-        
-        try {
-          if (item.generated_image_url) {
-            const response = await fetch(item.generated_image_url);
-            const buffer = await response.arrayBuffer();
-            
-            const imagePath = `wardrobe/generated_${Date.now()}_${Math.random()}.png`;
-            
-            const { data: uploaded, error: uploadError } = await supabase.storage
-              .from("wardrobe")
-              .upload(imagePath, Buffer.from(buffer), {
-                contentType: "image/png",
-              });
-            
-            if (uploadError) {
-              console.warn("⚠️ Supabase Upload Failed. Using fallback image.", uploadError);
-            } else {
-              finalImageUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/wardrobe/${uploaded.path}`;
-            }
-          }
-        } catch (err) {
-          console.warn("⚠️ Failed to fetch/upload generated image:", err);
-        }
         
         const { data: clothingItem, error: dbError } = await supabase
           .from("clothing_items")
@@ -194,7 +182,7 @@ router.post("/add/myntra", authenticateUser, upload.array("image"), async (req, 
               material: material || item["Material"],
               brand: brand || null,
               fit_type: fit || item["Fit"],
-              image_url: finalImageUrl,
+              image_url: null,
               name: item.suggested_name || `${item["Primary Color"] || ""} ${item["Subcategory"]}`,
               colors: item["Colors"],
               primary_color: item["Primary Color"],
@@ -211,6 +199,12 @@ router.post("/add/myntra", authenticateUser, upload.array("image"), async (req, 
           console.error("❌ Database Insert Error:", dbError);
           throw new Error("Error saving clothing item to database.");
         }
+
+        const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}. Image must have a realistic tone and lighting.`;
+        await sendImageGenerationToQueue({
+          textPrompt: textPrompt,
+          itemId: clothingItem[0]?.id,
+        })
         
         fileItems.push(clothingItem[0]);
       }
@@ -279,30 +273,6 @@ router.post("/add/multiple", authenticateUser, upload.array("image"), async (req
       
       // Process each analyzed item
       for (const item of analysisItems) {
-        let finalImageUrl = imageUrl; // fallback image
-        
-        try {
-          if (item.generated_image_url) {
-            const response = await fetch(item.generated_image_url);
-            const buffer = await response.arrayBuffer();
-            
-            const imagePath = `wardrobe/generated_${Date.now()}_${Math.random()}.png`;
-            
-            const { data: uploaded, error: uploadError } = await supabase.storage
-              .from("wardrobe")
-              .upload(imagePath, Buffer.from(buffer), {
-                contentType: "image/png",
-              });
-            
-            if (uploadError) {
-              console.warn("⚠️ Supabase Upload Failed. Using fallback image.", uploadError);
-            } else {
-              finalImageUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/wardrobe/${uploaded.path}`;
-            }
-          }
-        } catch (err) {
-          console.warn("⚠️ Failed to fetch/upload generated image:", err);
-        }
         
         const { data: clothingItem, error: dbError } = await supabase
           .from("clothing_items")
@@ -314,7 +284,7 @@ router.post("/add/multiple", authenticateUser, upload.array("image"), async (req
               material: material || item["Material"],
               brand: brand || null,
               fit_type: fit || item["Fit"],
-              image_url: finalImageUrl,
+              image_url: null,
               name: item.suggested_name || `${item["Primary Color"] || ""} ${item["Subcategory"]}`,
               colors: item["Colors"],
               primary_color: item["Primary Color"],
@@ -331,6 +301,12 @@ router.post("/add/multiple", authenticateUser, upload.array("image"), async (req
           console.error("❌ Database Insert Error:", dbError);
           throw new Error("Error saving clothing item to database.");
         }
+
+        const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}. Image must have a realistic tone and lighting.`;
+        await sendImageGenerationToQueue({
+          textPrompt: textPrompt,
+          itemId: clothingItem[0]?.id,
+        })
         
         fileItems.push(clothingItem[0]);
       }
@@ -582,33 +558,6 @@ Return your response in the following valid JSON structure only (no commentary):
       }
     ]
   }
-  
-for (const item of items) {
-  try {
-    const textPrompt = `Product-style image of a ${item["Primary Color"] || "neutral"} ${item["Fit"] || "regular"} ${item["Material"] || "fabric"} ${item["Subcategory"] || item["Category"]}. Image must have a realistic tone and lighting.`;
-
-    const imageGen = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: textPrompt,
-      size: '1024x1024',
-      n: 1,
-    });
-
-    const generatedUrl = imageGen?.data?.[0]?.url;
-
-    // ✅ Push item with generated image
-    generatedItems.push({
-      ...item,
-      generated_image_url: generatedUrl,
-    });
-
-    // ✅ Increment count in the profiles table (if user is logged in)
-   
-
-  } catch (genErr) {
-    console.warn("⚠️ Failed to generate image for item:", item, genErr);
-  }
-}
 
 if (userId && items?.length > 0) {
   const { data: profile, error: fetchError } = await supabase
