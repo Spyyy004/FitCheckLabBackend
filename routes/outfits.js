@@ -161,7 +161,9 @@ router.post("/generate", authenticateUser, async (req, res) => {
         },
       ]);
     }
-
+    trackEvent(userId,"Outfit Created",{
+      outfitRecommendation
+    })
     return res.json({ ...result, ...outfitRecommendation });
   } catch (error) {
     console.error("❌ Server Error:", error);
