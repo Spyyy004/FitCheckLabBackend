@@ -31,23 +31,62 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
     }
 
     if (eventType === "subscription.active") {
-      console.log(` Activating premium for ${customerEmail}`);
-
-      const { error } = await supabase
-      .from("profiles")
-      .update({
-        is_premium: true,
-        subscription_tier: 'ultimate',
-        last_usage_reset: new Date().toISOString()
-      })
-      .eq("email", customerEmail);
-    
-
-      if (error) {
-        console.error("Failed to update user as premium:", error);
-        return res.status(500).json({ error: "Database update failed" });
+        console.log(`Activating subscription for ${customerEmail}...`);
+      
+        // Extract product_id from the event object
+        const productId = event?.data?.product_id;
+        if (!productId) {
+          console.error("❌ Missing product_id in webhook event");
+          return res.status(400).json({ error: "Missing product_id" });
+        }
+      
+        // Determine subscription tier and duration based on product ID
+        let subscriptionTier = "free";
+        let subscriptionDuration = "monthly";
+      
+        const tierMap = {
+          // Premium
+          "pdt_hrJJLlSDOfTi0FGdx0WlI": { tier: "premium", duration: "yearly" }, // Global
+          "pdt_HbxDpbFRynHdxLmvKD8HZ": { tier: "premium", duration: "yearly" }, // India
+          "pdt_5JI7ZFfy9sdAuj48cSahD": { tier: "premium", duration: "monthly" }, // Global
+          "pdt_ZXZM5pANYxgvdbd3Iu1iY": { tier: "premium", duration: "monthly" }, // India
+      
+          // Ultimate
+          "pdt_MkzTqLKqf4Qs8m9Fk5LXL": { tier: "ultimate", duration: "yearly" }, // Global
+          "pdt_eTPRuicmF7WMB30vSIRuT": { tier: "ultimate", duration: "yearly" }, // India
+          "pdt_5NIn6ffAO2dEO1moYzsTp": { tier: "ultimate", duration: "monthly" }, // Global
+          "pdt_UjV4LHdt1j3tfNu8MfTnW": { tier: "ultimate", duration: "monthly" }, // India
+        };
+      
+        const matchedPlan = tierMap[productId];
+      
+        if (!matchedPlan) {
+          console.error("❌ Unrecognized product_id:", productId);
+          return res.status(400).json({ error: "Invalid product_id" });
+        }
+      
+        subscriptionTier = matchedPlan.tier;
+        subscriptionDuration = matchedPlan.duration;
+      
+        // Update user profile in Supabase
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            is_premium: true,
+            subscription_tier: subscriptionTier,
+            subscription_duration: subscriptionDuration,
+            last_usage_reset: new Date().toISOString(),
+          })
+          .eq("email", customerEmail);
+      
+        if (error) {
+          console.error("❌ Failed to update user subscription:", error);
+          return res.status(500).json({ error: "Database update failed" });
+        }
+      
+        console.log(`✅ ${customerEmail} upgraded to ${subscriptionTier} (${subscriptionDuration})`);
       }
-    }
+      
 
     else if (eventType === "subscription.renewed") {
       console.log(` Renewing premium status for ${customerEmail}`);
