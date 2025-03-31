@@ -111,6 +111,8 @@ export const processImageGenerationQueue = async () => {
     // 5. Update rate limit in database IMMEDIATELY (before processing)
     const newCount = currentCount + messagesToProcess.length;
 
+    try {
+
     if (rateLimitData) {
       // Update existing record
       await supabase
@@ -129,6 +131,11 @@ export const processImageGenerationQueue = async () => {
         window_start: windowStart.toISOString(),
         last_updated: now.toISOString(),
       });
+    }
+    } catch (error) {
+      console.error("❌ Error updating rate limit:", error);
+      Promise.all(messagesToProcess.map(message => requeueMessage(message, error)));
+      return { success: false, message: "Error updating rate limit" };
     }
 
     // 6. Process all messages in parallel
@@ -226,12 +233,20 @@ const generateAndSaveImage = async (body) => {
             "⚠️ Supabase Upload Failed. Using fallback image.",
             uploadError
           );
+          return {
+            success: false,
+            message: "Supabase Upload Failed.",
+          };
         } else {
           finalImageUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/wardrobe/${uploaded.path}`;
         }
       }
     } catch (err) {
       console.warn("⚠️ Failed to fetch/upload generated image:", err);
+      return {
+        success: false,
+        message: "Failed to fetch/upload generated image.",
+      };
     }
 
     const { data: clothingItem, error: dbError } = await supabase
@@ -241,6 +256,10 @@ const generateAndSaveImage = async (body) => {
 
     if (dbError) {
       console.error("❌ Database Update Error:", dbError);
+      return {
+        success: false,
+        message: "Database Update Error.",
+      };
     }
 
     return {
