@@ -292,9 +292,18 @@ router.post("/google-sign-in", async (req, res) => {
  */
 router.post("/signout", async (req, res) => {
   try {
-    res.clearCookie("access_token");
-    res.clearCookie("refresh_token");
-
+    res.clearCookie("access_token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      path: "/", // must match how you set it
+    });
+    res.clearCookie("refresh_token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      path: "/",
+    });
     return res.json({ message: "User signed out successfully." });
   } catch (error) {
     trackEvent("","API Failure",{
