@@ -219,7 +219,7 @@ router.post("/", upload.single("image"), async (req, res) => {
     ]);
 
     // Track event (fire and forget)
-    trackEvent(user_id, "Outfit Analyzed", {
+    trackEvent(user_id || 'Guest', "Outfit Analyzed", {
       isPremium,
       imageUrl,
     });

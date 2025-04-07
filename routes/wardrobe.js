@@ -958,44 +958,65 @@ router.get("/", authenticateUser, async (req, res) => {
 // Helper function to generate clothing analysis prompt
 
 
-router.get("/all",authenticateUser, async (req, res) => {
-  const userId = req?.user?.id;
+router.get("/all", authenticateUser, async (req, res) => {
+  try {
+    const userId = req?.user?.id;
 
-  // Step 1: Fetch all catalog items
-  const { data: catalogItems, error: catalogError } = await supabase
-    .from("catalog_basics")
-    .select("*")
-    .order("created_at", { ascending: true });
+    // Execute both database queries in parallel
+    const [catalogItemsResult, wardrobeItemsResult] = await Promise.all([
+      // Query 1: Get catalog items
+      supabase
+        .from("catalog_basics")
+        .select("*")
+        .order("created_at", { ascending: true }),
+      
+      // Query 2: Only fetch wardrobe items if user is authenticated
+      userId ? 
+        supabase
+          .from("clothing_items")
+          .select("name")
+          .eq("user_id", userId) :
+        { data: [] }
+    ]);
 
-  if (catalogError) {
-    console.error("❌ Error fetching catalog items:", catalogError);
-    return res.status(500).json({ error: "Failed to fetch catalog items." });
+    // Check for catalog fetch errors
+    if (catalogItemsResult.error) {
+      console.error("❌ Error fetching catalog items:", catalogItemsResult.error);
+      return res.status(500).json({ error: "Failed to fetch catalog items." });
+    }
+
+    const catalogItems = catalogItemsResult.data;
+
+    // If user is not logged in, return all catalog items
+    if (!userId) {
+      return res.status(200).json({ data: catalogItems });
+    }
+
+    // Check for wardrobe fetch errors
+    if (wardrobeItemsResult.error) {
+      console.error("❌ Error fetching user's wardrobe items:", wardrobeItemsResult.error);
+      return res.status(500).json({ error: "Failed to fetch wardrobe data." });
+    }
+
+    // Create optimized lookup set for O(1) membership testing
+    const addedNames = new Set(
+      wardrobeItemsResult.data.map(item => (item.name || "").trim().toLowerCase())
+    );
+
+    // Filter out items that user already has
+    const filteredCatalog = catalogItems.filter(
+      item => !addedNames.has((item.name || "").trim().toLowerCase())
+    );
+
+    return res.status(200).json({ data: filteredCatalog });
+  } catch (error) {
+    console.error("❌ Unexpected error in /all endpoint:", error);
+    trackEvent("", "API Failure", {
+      error: error?.message ?? "Error Message",
+      type: "get-catalog-basics"
+    });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
-
-  if (!userId) {
-    // If user is not logged in, return everything
-    return res.status(200).json({ data: catalogItems });
-  }
-
-  // Step 2: Get clothing item names already added by user
-  const { data: wardrobeItems, error: wardrobeError } = await supabase
-    .from("clothing_items")
-    .select("name")
-    .eq("user_id", userId);
-
-  if (wardrobeError) {
-    console.error("❌ Error fetching user's wardrobe items:", wardrobeError);
-    return res.status(500).json({ error: "Failed to fetch wardrobe data." });
-  }
-
-  const addedNames = new Set(wardrobeItems.map(item => item.name.trim().toLowerCase()));
-
-  // Step 3: Filter out catalog items that are already in wardrobe by name
-  const filteredCatalog = catalogItems.filter(
-    item => !addedNames.has(item.name.trim().toLowerCase())
-  );
-
-  return res.status(200).json({ data: filteredCatalog });
 });
 
 
